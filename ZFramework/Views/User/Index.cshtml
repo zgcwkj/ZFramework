@@ -1,0 +1,219 @@
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+
+<html>
+<head>
+    <partial name="Top" />
+    <title>用户管理</title>
+</head>
+<body style="background:#fff;margin:20px;">
+    <div class="wrap-container clearfix">
+        <div class="column-content-detail">
+            <div class="layui-form">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <input type="text" class="layui-input" id="QueryLikeStr" name="QueryLikeStr" placeholder="关键字">
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn" onclick="SearchData()">搜索</button>
+                        <button class="layui-btn layui-btn-normal" onclick="InsertDate()">新增数据</button>
+                        <button class="layui-btn layui-btn-danger" onclick="DeleteDate()">删除选中</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form" id="TablePrint">
+                <table class="layui-table" lay-filter="TableData" id="TableData"></table>
+            </div>
+        </div>
+    </div>
+    <partial name="Bottom" />
+    <script>
+        var $, layer, table, laydate, form, upload;
+        layui.use(['jquery', 'layer', 'table', 'laydate', 'form', 'upload'], function () {
+            $ = layui.jquery, layer = layui.layer, table = layui.table, laydate = layui.laydate, form = layui.form, upload = layui.upload;
+            //表格绑定
+            table.render({
+                elem: '#TableData',
+                url: '/User/InquireUserData',
+                page: true,
+                method: 'post',
+                cellMinWidth: 80,
+                height: 'full-140',
+                limit: 50,
+                request: {
+                    pageName: 'Page',//页码的参数名称，默认：page
+                    limitName: 'PageSize',//每页数据量的参数名，默认：limit
+                },
+                parseData: function (res) {
+                    return {
+                        "code": res.ErrorCode,//解析接口状态
+                        "msg": res.ErrorMessage,//解析提示文本
+                        "count": res.DataCount,//解析数据长度
+                        "data": res.Data,//解析数据列表
+                    };
+                },
+                where: {
+                    QueryLikeStr: '',
+                },
+                cols: [[
+                    { type: 'checkbox', fixed: 'left' },
+                    { type: 'numbers', title: '序号', fixed: 'left' },
+                    { field: 'accounts', title: '账号', sort: true },
+                    { field: 'user_name', title: '用户名称' },
+                    { field: 'create_time', title: '创建时间', sort: true },
+                    {
+                        field: 'canteenOperat', title: '操作', templet: function (d) {
+                            var html = '';
+                            html += '<a class="layui-btn layui-btn-warm layui-btn-sm" onclick="UpdateDate(' + d.LAY_TABLE_INDEX + ')">修改</a>';
+                            html += '<a class="layui-btn layui-btn-danger layui-btn-sm" onclick="DeleteDate(' + d.LAY_TABLE_INDEX + ')">删除</a>';
+                            return html
+                        }, fixed: 'right', width: 140
+                    },
+                ]]
+            });
+        });
+        //新增和修改界面代码
+        var _html = "";
+        _html += "<div class='layui-form'>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>用户账号</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='accounts' placeholder='请输入用户账号'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>用户名称</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='user_name' placeholder='请输入用户名称'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>用户密码</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='password' placeholder='请输入用户密码'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "</div>";
+        //查询按钮
+        function SearchData() {
+            table.reload('TableData', {
+                where: {
+                    QueryLikeStr: $("#QueryLikeStr").val(),
+                }
+            });
+        }
+        //新增按钮
+        function InsertDate() {
+            layer.open({
+                shade: 0.4,
+                resize: false,
+                content: _html,
+                title: "新增用户",
+                btn: ["确定", "取消"],
+                yes: function (index, layero) {
+                    var accounts = $("#accounts").val();
+                    var user_name = $("#user_name").val();
+                    var password = $("#password").val();
+                    if (accounts != "" && user_name != "" && password != "") {
+                        $.post("/User/InsertUserData", {
+                            Accounts: accounts,
+                            UserName: user_name,
+                            Password: password,
+                        }, function (data) {
+                            if (data.ErrorCode == 0) {
+                                layer.msg(data.ErrorMessage, { icon: 1 });
+                                SearchData();
+                            } else {
+                                layer.msg(data.ErrorMessage, { icon: 5 });
+                            }
+                        });
+                    } else {
+                        layer.msg("请输入正确的数据", { icon: 3 });
+                    }
+                }
+            });
+        }
+        //修改按钮
+        function UpdateDate(index) {
+            var getData = table.cache.TableData;
+            var row = getData[index];
+            layer.open({
+                shade: 0.4,
+                resize: false,
+                content: _html,
+                title: "修改用户",
+                btn: ["确定", "取消"],
+                success: function (layero, index) {
+                    $("#accounts").val(row.accounts);
+                    $("#user_name").val(row.user_name);
+                },
+                yes: function (index, layero) {
+                    var accounts = $("#accounts").val();
+                    var user_name = $("#user_name").val();
+                    var password = $("#password").val();
+                    if (accounts != "" && user_name != "") {
+                        $.post("/User/UpdateUserData", {
+                            Accounts: accounts,
+                            UserName: user_name,
+                            Password: password,
+                            UserID: row.user_id,
+                        }, function (data) {
+                            if (data.ErrorCode == 0) {
+                                layer.msg(data.ErrorMessage, { icon: 1 });
+                                SearchData();
+                            } else {
+                                layer.msg(data.ErrorMessage, { icon: 5 });
+                            }
+                        });
+                    } else {
+                        layer.msg("请输入正确的数据", { icon: 3 });
+                    }
+                }
+            });
+        }
+        //删除按钮
+        function DeleteDate(index) {
+            var selectID = "";
+            if (index == null) {
+                selectID = GetSelect();
+                if (selectID == "") { layer.msg("请选择数据"); return; }
+            } else {
+                //单选（通过表格数据选择删除）
+                var getData = table.cache.TableData;
+                var row = getData[index];
+                selectID = row.user_id;
+            }
+            layer.confirm('确定要删除吗？', {
+                shade: 0.4,
+                resize: false,
+                btn: ['确定', '取消'],
+            }, function () {
+                $.post("/User/DeleteUserData", {
+                    IDS: selectID,
+                }, function (data) {
+                    if (data.ErrorCode == 0) {
+                        layer.msg(data.ErrorMessage, { icon: 1 });
+                        SearchData();
+                    } else {
+                        layer.msg(data.ErrorMessage, { icon: 5 });
+                    }
+                });
+            });
+        }
+        //获取选中
+        function GetSelect() {
+            var selectIDs = "";
+            //多选（通过便利表格所选择数据）
+            var checkStatus = table.checkStatus('TableData');
+            var checkData = checkStatus.data; //得到选中的数据
+            for (var i = 0; i < checkData.length; i++) {
+                selectIDs += checkData[i].user_id + ",";
+                if (i == checkData.length - 1) {
+                    selectIDs = selectIDs.substring(0, selectIDs.length - 1);
+                }
+            }
+            return selectIDs;
+        }
+    </script>
+</body>
+</html>

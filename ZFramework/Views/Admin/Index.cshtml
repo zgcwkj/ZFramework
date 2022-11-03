@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>登录至后台 @ViewData["ServerName"]</title>
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width">
+    <link href="~/favicon.ico" rel="shortcut icon">
+    <link href="~/Content/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/css/animate.min.css" rel="stylesheet" />
+    <link href="~/Content/css/style.min.css" rel="stylesheet" />
+    <link href="~/Content/css/plugins/icheck/custom.css" rel="stylesheet" />
+    <link href="~/Content/css/plugins/toastr/toastr.min.css" rel="stylesheet" />
+    <script>if (window.top !== window.self) { window.top.location = window.location; }</script>
+</head>
+<body class="gray-bg">
+    <div class="middle-box text-center loginscreen  animated fadeInDown">
+        <div>
+            <div>
+                <h1><b>Z</b>F</h1>
+            </div>
+            <h3>欢迎登录</h3>
+            <div class="m-t" role="form">
+                <div class="form-group">
+                    <input type="email" class="form-control" id="accounts" placeholder="请输入登录账号" value="@ViewData["Accounts"]">
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" id="password" placeholder="请输入登录密码" value="@ViewData["Password"]">
+                </div>
+                <div class="form-group">
+                    <div class="col-xs-5" style="padding:0px;">
+                        <input type="text" class="form-control" id="captcha" placeholder="请输入验证码">
+                    </div>
+                    <div class="col-xs-4" style="text-align:right;padding-right:0px;">
+                        <img id="VerificationImg" src="/Admin/ValidateImage?@ViewData["DateTime"]" onclick="changeVerification()" class="img-responsive" style="height:35px;border:1px solid #3c8dbc;">
+                    </div>
+                    <div class="col-xs-3" style="padding-top:10px;">
+                        <a style="cursor:pointer;" onclick="changeVerification()">换一换</a>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-xs-6">
+                        <div class="checkbox i-checks">
+                            <input type="checkbox" id="rememberMe" @ViewData["Remember"]> 记住信息
+                        </div>
+                    </div>
+                    <div class="col-xs-6">
+                        <div class="checkbox pull-right">
+                            <a style="cursor:pointer;" onclick="Forget()">忘记密码</a>
+                            <span>&nbsp;/&nbsp;</span>
+                            <a style="cursor:pointer;" onclick="Registered()">注册</a>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary block full-width m-b" onclick="Login()">登 录</button>
+            </div>
+        </div>
+    </div>
+    <script src="~/Content/js/jquery-3.3.1.min.js"></script>
+    <script src="~/Content/js/bootstrap.min.js"></script>
+    <script src="~/Content/js/script.js"></script>
+    <script src="~/Content/js/plugins/toastr/toastr.min.js"></script>
+    <script src="~/Content/js/plugins/icheck/icheck.min.js"></script>
+    <script>
+        //初始化页面控件
+        $(document).ready(function () { $(".i-checks").iCheck({ checkboxClass: "icheckbox_square-green", radioClass: "iradio_square-green", }) });
+        //通过地址获取传递的变量
+        var Data = GetQueryString("Data");
+        //传递的变量不为空
+        if (Data != "") toastr.error(decodeURI(Data)); else toastr.info("感谢您的光临");
+        //重新获取验证码
+        function changeVerification() {
+            $("#captcha").val("");
+            toastr.warning("正在重新获取验证码");
+            $("#VerificationImg").prop("src", "/Admin/ValidateImage?" + new Date().getTime());
+        }
+        //忘记密码
+        function Forget() {
+            toastr.info("该功能未开放");
+        }
+        //注册
+        function Registered() {
+            toastr.info("该功能未开放");
+        }
+        //登录后台
+        function Login() {
+            var rememberMe = $("#rememberMe").prop("checked");
+            var accounts = $("#accounts").val();
+            var password = $("#password").val();
+            var captcha = $("#captcha").val();
+            if (accounts == "") { toastr.error("请输入登录账号"); return; }
+            if (password == "") { toastr.error("请输入登录密码"); return; }
+            //发起网络请求
+            $.post("/Admin/Login", {
+                rememberMe: rememberMe,
+                accounts: accounts,
+                password: password,
+                captcha: captcha,
+            }, function (data) {
+                if (data.ErrorCode == 0) {
+                    toastr.success(data.ErrorMessage);
+                    setTimeout(function () {
+                        window.location.href = "/Admin/Admin";
+                    }, '1000');
+                } else {
+                    toastr.error(data.ErrorMessage);
+                    changeVerification();
+                }
+            });
+        }
+        //按键事件
+        document.onkeydown = function (e) {
+            var e = window.event ? window.event : e;
+            //回车键登录
+            if (e.keyCode == 13) Login();
+        }
+    </script>
+</body>
+</html>

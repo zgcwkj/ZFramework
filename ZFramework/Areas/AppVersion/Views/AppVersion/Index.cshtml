@@ -1,0 +1,339 @@
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+
+<html>
+<head>
+    <partial name="Top" />
+    <title>版本控制</title>
+</head>
+<body style="background:#fff;margin:20px;">
+    <div class="wrap-container clearfix">
+        <div class="column-content-detail">
+            <div class="layui-form">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <input type="text" class="layui-input" id="BeginDate" name="BeginDate" placeholder="起始时间">
+                    </div>
+                    <div class="layui-inline">
+                        <input type="text" class="layui-input" id="EndDate" name="EndDate" placeholder="结束时间">
+                    </div>
+                    <div class="layui-inline">
+                        <input type="text" class="layui-input" id="QueryLikeStr" name="QueryLikeStr" placeholder="关键字">
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn" onclick="SearchData()">搜索</button>
+                        <button class="layui-btn layui-btn-normal" onclick="InsertDate()">新增数据</button>
+                        <button class="layui-btn" onclick="OpenAppUpdateApi()">查看接口</button>
+                        <button class="layui-btn layui-btn-radius" onclick="SelectAppState(1)">启用选中</button>
+                        <button class="layui-btn layui-btn-danger layui-btn-radius" onclick="SelectAppState(0)">停用选中</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form" id="TablePrint">
+                <table class="layui-table" lay-filter="TableData" id="TableData"></table>
+            </div>
+        </div>
+    </div>
+    <partial name="Bottom" />
+    <script>
+        var $, layer, table, laydate, form, upload;
+        layui.use(['jquery', 'layer', 'table', 'laydate', 'form', 'upload'], function () {
+            $ = layui.jquery, layer = layui.layer, table = layui.table, laydate = layui.laydate, form = layui.form, upload = layui.upload;
+            //起始时间
+            var beginDate = laydate.render({
+                elem: '#BeginDate',
+                type: 'datetime',
+                btns: ['confirm'],
+                max: 'nowTime',//默认最大值为当前日期
+                done: function (value, date) {
+                    endDate.config.min = {
+                        year: date.year,
+                        month: date.month - 1,//关键
+                        date: date.date,
+                        hours: date.hours,
+                        minutes: date.minutes,
+                        seconds: date.seconds
+                    }
+                }
+            });
+            //结束时间
+            var endDate = laydate.render({
+                elem: '#EndDate',
+                type: 'datetime',
+                btns: ['confirm'],
+                max: 'nowTime',
+                done: function (value, date) {
+                    beginDate.config.max = {
+                        year: date.year,
+                        month: date.month - 1,//关键
+                        date: date.date,
+                        hours: date.hours,
+                        minutes: date.minutes,
+                        seconds: date.seconds
+                    }
+                }
+            });
+            //表格绑定
+            table.render({
+                elem: '#TableData',
+                url: '/AppVersion/AppVersion/InquireData',
+                page: true,
+                method: 'post',
+                cellMinWidth: 80,
+                height: 'full-140',
+                limit: 50,
+                limits: [50, 250, 500],
+                request: {
+                    pageName: 'Page',//页码的参数名称，默认：page
+                    limitName: 'PageSize',//每页数据量的参数名，默认：limit
+                },
+                parseData: function (res) {
+                    return {
+                        "code": res.ErrorCode,//解析接口状态
+                        "msg": res.ErrorMessage,//解析提示文本
+                        "count": res.DataCount,//解析数据长度
+                        "data": res.Data,//解析数据列表
+                    };
+                },
+                where: {
+                    QueryLikeStr: '',
+                    BeginDate: '',
+                    EndDate: '',
+                },
+                cols: [[
+                    { type: 'checkbox', fixed: 'left' },
+                    { type: 'numbers', title: '序号', fixed: 'left' },
+                    { field: 'app_name', title: '名称' },
+                    { field: 'app_desc', title: '公告' },
+                    { field: 'app_path', title: '存储路径' },
+                    { field: 'app_version', title: '版本号' },
+                    {
+                        field: 'app_state', title: '状态', width: 80, templet: function (d) {
+                            var html = '<span style="color:#ff0000">停用</span>';
+                            if (d.app_state == '1') {
+                                html = '<span style="color:#1e9fff">启用</span>';
+                            }
+                            return html
+                        }
+                    },
+                    { field: 'upload_time', title: '上传时间', width: 160 },
+                    //{
+                    //    field: 'canteenOperat', title: '操作', templet: function (d) {
+                    //        var index = d.LAY_TABLE_INDEX;
+                    //        var html = '';
+                    //        html += '<a class="layui-btn layui-btn-warm layui-btn-sm" onclick="UpdateDate(' + index + ')">修改</a>';
+                    //        return html
+                    //    }, fixed: 'right', width: 80
+                    //},
+                ]]
+            });
+        });
+        //新增和修改界面代码
+        var _html = "";
+        _html += "<div class='layui-form' style='margin:10px'>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>名称</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='app_name' placeholder='请输入名称'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>公告</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <textarea id='app_desc' placeholder='请输入公告' class='layui-textarea'></textarea>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>强制更新</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='app_enforce' placeholder='是否强制更新'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>版本号</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='app_version' placeholder='请输入版本号'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>存储路径</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='app_path' placeholder='请输入路径' disabled=''>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>上传文件</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <button class='layui-btn layui-btn-warm' id='UploadFile'>选择文件</button>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "</div>";
+        //查询按钮
+        function SearchData() {
+            layer.msg('正在查询中...', {
+                icon: 16,
+                shade: 0.5,
+                time: false
+            });
+            table.reload('TableData', {
+                page: {
+                    curr: 1
+                },
+                where: {
+                    QueryLikeStr: $("#QueryLikeStr").val(),
+                    BeginDate: $("#BeginDate").val(),
+                    EndDate: $("#EndDate").val(),
+                },
+                done: function (data) {
+                    if (data.code == 0) {
+                        layer.closeAll();
+                    } else {
+                        layer.open({
+                            type: 1,
+                            offset: 'auto',
+                            id: 'TableData_SearchData',
+                            content: `<div style="padding: 20px 100px;">${data.msg}</div>`,
+                            btn: '关闭',
+                            btnAlign: 'c',
+                            shade: 0,
+                            yes: function () {
+                                layer.closeAll();
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        //新增按钮
+        function InsertDate() {
+            layer.open({
+                shade: 0.4,
+                area: '70%',
+                resize: false,
+                content: _html,
+                title: "新增数据",
+                btn: ["确定", "取消"],
+                type: 1,
+                success: function (data) {
+                    //文件上传
+                    upload.render({
+                        elem: '#UploadFile',
+                        accept: 'file',
+                        url: '/AppVersion/AppVersion/UploadFile',
+                        before: function (obj) {
+                            layer.msg('处理文件中...', {
+                                icon: 16,
+                                shade: 0.4,
+                                time: false
+                            });
+                        },
+                        done: function (data) {
+                            layer.closeAll("dialog");
+                            $("#app_path").val(data.Data.FilePath);
+                            $("#app_name").val(data.Data.FileName);
+                            $("#app_desc").val(data.Data.AppDesc);
+                            $("#app_enforce").val(data.Data.AppEnforce);
+                            $("#app_version").val(data.Data.Version);
+                        }
+                    });
+                },
+                yes: function (index, layero) {
+                    var app_path = $("#app_path").val();
+                    var app_name = $("#app_name").val();
+                    var app_desc = $("#app_desc").val();
+                    var app_enforce = $("#app_enforce").val();
+                    var app_version = $("#app_version").val();
+                    if (app_path != "" && app_name != "" && app_version != "") {
+                        layer.msg('正在存储中...', {
+                            icon: 16,
+                            shade: 0.7,
+                            time: false
+                        });
+                        $.post("/AppVersion/AppVersion/InsertData", {
+                            FilePath: app_path,
+                            FileName: app_name,
+                            AppDesc: app_desc,
+                            AppEnforce: app_enforce,
+                            Version: app_version,
+                        }, function (data) {
+                            layer.closeAll();
+                            if (data.ErrorCode == 0) {
+                                layer.msg(data.ErrorMessage, { icon: 1 });
+                                SearchData();
+                            } else {
+                                layer.msg(data.ErrorMessage, { icon: 5 });
+                            }
+                        });
+                    } else {
+                        layer.msg("请输入正确的数据", { icon: 3 });
+                    }
+                }
+            });
+        }
+        //选择的状态更变
+        function SelectAppState(state) {
+            var selectID = GetSelect();
+            if (selectID == "") { layer.msg("请选择数据"); return; }
+            layer.confirm('确定要更改状态吗？', {
+                shade: 0.4,
+                resize: false,
+                btn: ['确定', '取消'],
+            }, function () {
+                layer.msg('正在处理中...', {
+                    icon: 16,
+                    shade: 0.7,
+                    time: false
+                });
+                $.post("/AppVersion/AppVersion/UpdateState", {
+                    IDS: selectID,
+                    State: state,
+                }, function (data) {
+                    layer.closeAll();
+                    if (data.ErrorCode == 0) {
+                        layer.msg(data.ErrorMessage, { icon: 1 });
+                        SearchData();
+                    } else {
+                        layer.msg(data.ErrorMessage, { icon: 5 });
+                    }
+                });
+            });
+        }
+        //查看版本更新链接
+        function OpenAppUpdateApi() {
+            layer.open({
+                shade: 0.4,
+                area: '400px',
+                resize: false,
+                content: `
+<span style='color:#f00'>接口：</span>
+<br />
+检查更新：/ApiData/GetUpdateInfo?AV=当前版本号
+<br />
+下载版本：/ApiData/GetAppFile?AV=当前版本号
+<br />
+<br />
+<span style='color:#f00'>参数说明：</span><u>AV 当前版本号</u>
+<br />
+<span style='color:#f00'>返回说明：</span>返回文件流代表有更新，否则无更新
+`,
+                title: "查看接口",
+                btn: ["确定"]
+            });
+        }
+        //获取选中
+        function GetSelect() {
+            var selectIDs = "";
+            //多选（通过便利表格所选择数据）
+            var checkStatus = table.checkStatus('TableData');
+            var checkData = checkStatus.data; //得到选中的数据
+            for (var i = 0; i < checkData.length; i++) {
+                selectIDs += checkData[i].app_id + ",";
+                if (i == checkData.length - 1) {
+                    selectIDs = selectIDs.substring(0, selectIDs.length - 1);
+                }
+            }
+            return selectIDs;
+        }
+    </script>
+</body>
+</html>

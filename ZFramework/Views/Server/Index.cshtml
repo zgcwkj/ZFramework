@@ -1,0 +1,87 @@
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment env
+<!DOCTYPE html>
+
+<html>
+<head>
+    <partial name="Top" />
+    <title>服务器信息</title>
+    <style>
+        label {
+            width: 120px;
+            display: inline-block
+        }
+    </style>
+</head>
+<body style="background:#f1f1f1;margin:20px;">
+    <div class="layui-col-md6" style="padding: 10px;">
+        <div class="layui-card">
+            <div class="layui-card-header">系统信息</div>
+            <div class="layui-card-body">
+                <div>
+                    <label>电脑名称：</label>
+                    <span>@Environment.MachineName</span>
+                </div>
+                <div>
+                    <label>操作系统：</label>
+                    <span>@System.Runtime.InteropServices.RuntimeInformation.OSDescription</span>
+                </div>
+                <div>
+                    <label>系统架构：</label>
+                    <span>@System.Runtime.InteropServices.RuntimeInformation.OSArchitecture</span>
+                </div>
+                <div>
+                    <label>系统时间：</label>
+                    <span>@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="layui-col-md6" style="padding: 10px;">
+        <div class="layui-card">
+            <div class="layui-card-header">运行信息</div>
+            <div class="layui-card-body">
+                <div>
+                    <label>.NET Core版本：</label>
+                    <span>@Html.Raw(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription)</span>
+                </div>
+                <div>
+                    <label>内存占用：</label>
+                    <span>@Html.Raw(((Double)System.Diagnostics.Process.GetCurrentProcess().WorkingSet64 / 1048576).ToString("N2") + " MB")</span>
+                </div>
+                <div>
+                    <label>启动时间：</label>
+                    <span>@System.Diagnostics.Process.GetCurrentProcess().StartTime.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                </div>
+                <div>
+                    <label>编译时间：</label>
+                    <span>@(new System.IO.FileInfo(this.GetType().Assembly.Location).LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"))</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="layui-col-md12" style="padding: 10px;">
+        <div class="layui-card">
+            <div class="layui-card-header">环境信息</div>
+            <div class="layui-card-body">
+                <div>
+                    <label>环境变量：</label>
+                    <span>@Html.Raw(env.EnvironmentName)</span>
+                </div>
+                <div>
+                    <label>ContentRootPath：</label>
+                    <span>@Html.Raw(env.ContentRootPath)</span>
+                </div>
+                <div>
+                    <label>WebRootPath：</label>
+                    <span>@Html.Raw(env.WebRootPath)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <partial name="Bottom" />
+    <script>
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+
+<html>
+<head>
+    <partial name="Top" />
+    <title>日志管理</title>
+</head>
+<body style="background:#fff;margin:20px;">
+    <pre>@ViewData["LogContent"]</pre>
+    <partial name="Bottom" />
+    <script>
+        var $, layer, table, laydate, form, upload;
+        layui.use(['jquery', 'layer', 'table', 'laydate', 'form', 'upload'], function () {
+            $ = layui.jquery, layer = layui.layer, table = layui.table, laydate = layui.laydate, form = layui.form, upload = layui.upload;
+
+        });
+    </script>
+</body>
+</html>

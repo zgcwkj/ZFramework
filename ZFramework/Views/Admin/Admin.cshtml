@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>管理平台 @ViewData["ServerName"]</title>
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width">
+    <link href="~/favicon.ico" rel="shortcut icon">
+    <link href="~/Content/layui/css/layui.css" rel="stylesheet" />
+    <link href="~/Content/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/css/animate.min.css" rel="stylesheet" />
+    <link href="~/Content/css/style.min.css" rel="stylesheet" />
+</head>
+<body class="fixed-sidebar full-height-layout gray-bg" style="overflow:hidden">
+    <div id="wrapper">
+        <!--左侧导航开始-->
+        <nav class="navbar-default navbar-static-side" role="navigation">
+            <div class="nav-close"></div>
+            <div class="sidebar-collapse">
+                <ul class="nav" id="side-menu">
+                    <li class="nav-header">
+                        <div class="dropdown profile-element">
+                            <b>Z</b>Framework
+                        </div>
+                        <div class="logo-element">
+                            <b>Z</b>F
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <!--左侧导航结束-->
+        <!--右侧部分开始-->
+        <div id="page-wrapper" class="gray-bg dashbard-1">
+            <div class="row border-bottom">
+                <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+                    <div class="navbar-header">
+                        <a class="navbar-minimalize minimalize-styl-2 btn btn-primary"><i class="fa fa-bars"></i></a>
+                        <div class="navbar-form-custom">
+                            <!--<div class="form-group">
+                                <input type="text" placeholder="请输入您需要查找的内容 …" class="form-control" id="top-search">
+                            </div>-->
+                        </div>
+                    </div>
+                    <ul class="nav navbar-top-links navbar-right">
+                        <li class="dropdown hidden-xs">
+                            <a class="right-sidebar-toggle" onclick="UpdateUser()">
+                                <i class="fa fa-user"></i> @ViewData["UserName"]
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            <div class="row content-tabs">
+                <button class="roll-nav roll-left J_tabLeft"><i class="fa fa-backward"></i></button>
+                <nav class="page-tabs J_menuTabs">
+                    <div class="page-tabs-content">
+                        <a class="active J_menuTab" data-id="home" href="javascript:void(0);">首页</a>
+                    </div>
+                </nav>
+                <button class="roll-nav roll-right J_tabRight">
+                    <i class="fa fa-forward"></i>
+                </button>
+                <div class="btn-group roll-nav roll-right">
+                    <button class="dropdown J_tabClose" data-toggle="dropdown">关闭操作<span class="caret"></span></button>
+                    <ul role="menu" class="dropdown-menu dropdown-menu-right">
+                        <li class="J_tabShowActive"><a>定位当前选项卡</a></li>
+                        <li class="divider"></li>
+                        <li class="J_tabCloseAll"><a>关闭全部选项卡</a></li>
+                        <li class="J_tabCloseOther"><a>关闭其他选项卡</a></li>
+                    </ul>
+                </div>
+                <a href="javascript:void(0);" class="roll-nav roll-right J_tabExit" onclick="ExitUser()"><i class="fa fa fa-sign-out"></i>退出</a>
+            </div>
+            <div class="row J_mainContent" id="content-main">
+                <iframe class="J_iframe" src="/Help" frameborder="0" data-id="home" seamless style="width:100%;height:100%"></iframe>
+            </div>
+            <div class="footer">
+                <div class="pull-right">
+                    &copy; @DateTime.Now.Year.ToString() 由 <a href="http://github.com/zgcwkj/zgcwkj.DotnetCore" target="_blank">ZFramework</a> 强力驱动
+                </div>
+            </div>
+        </div>
+        <!--右侧部分结束-->
+    </div>
+    <script src="~/Content/js/jquery.min.js"></script>
+    <script src="~/Content/layui/layui.js"></script>
+    <script src="~/Content/js/bootstrap.min.js"></script>
+    <script src="~/Content/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="~/Content/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+    <script src="~/Content/js/plugins/pace/pace.min.js"></script>
+    <script src="~/Content/js/hplus.min.js"></script>
+    <script>
+        //Layui 初始化
+        var layer, table, laydate, form;
+        layui.use(['layer', 'table', 'laydate', 'form'], function () {
+            layer = layui.layer, table = layui.table, laydate = layui.laydate, form = layui.form;
+            //获取菜单并展示
+            $.post("/Admin/Menu", function (data) {
+                MenuGenerate(data);
+            });
+        });
+        //修改用户账号和密码
+        var _html = "";
+        _html += "<div style='margin:20px;'>";
+        _html += "  <div class='form-group'>";
+        _html += "    <input type='text' class='form-control' placeholder='请输入用户名称' id='Name' value='@ViewData["UserName"]'>";
+        _html += "  </div>";
+        _html += "  <div class='form-group'>";
+        _html += "    <input type='password' class='form-control' placeholder='请输入旧密码' id='Password'>";
+        _html += "  </div>";
+        _html += "  <div class='form-group'>";
+        _html += "    <input type='password' class='form-control' placeholder='请输入新密码' id='toPassword'>";
+        _html += "  </div>";
+        _html += "</div>";
+        //个人资料
+        function UpdateUser() {
+            layer.open({
+                shade: 0.4,
+                content: _html,
+                resize: false,
+                title: "个人资料",
+                btn: ["确定", "取消"],
+                yes: function (index, layero) {
+                    var Name = $("#Name").val();
+                    var Password = $("#Password").val();
+                    var toPassword = $("#toPassword").val();
+                    if (Name != "" && Password != "" && toPassword != "") {
+                        layer.confirm('确定要修改用户名称和密码吗？', {
+                            btn: ["确定", "取消"]
+                        }, function () {
+                            layer.msg("修改中");
+                            $.post("/Admin/UpdateUser", {
+                                Name: Name,
+                                Password: Password,
+                                toPassword: toPassword
+                            }, function (data) {
+                                if (data.ErrorCode == 0) {
+                                    layer.msg(data.ErrorMessage, { icon: 1 });
+                                    setTimeout(function () {
+                                        window.location.href = "";
+                                    }, "1000");
+                                } else {
+                                    layer.msg(data.ErrorMessage, { icon: 5 });
+                                    setTimeout(function () {
+                                        window.location.href = "";
+                                    }, "1000");
+                                }
+                            });
+                        });
+                    } else {
+                        layer.msg("请输入用户名称或密码", { icon: 3 });
+                    }
+                }
+            });
+        }
+        //退出登录
+        function ExitUser() {
+            layer.confirm("确定要退出？", {
+                btn: ["确定", "取消"]
+            }, function () {
+                //发起网络请求
+                $.post("/Admin/ExitUser", function (data) {
+                    if (data.ErrorCode == 0) {
+                        layer.msg(data.ErrorMessage, { icon: 1 });
+                        setTimeout(function () {
+                            window.location.href = "/Admin";
+                        }, "1000");
+                    } else {
+                        layer.msg(data.ErrorMessage, { icon: 5 });
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

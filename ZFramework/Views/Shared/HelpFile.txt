@@ -1,0 +1,7 @@
+﻿导入说明
+
+1、@await Html.PartialAsync("~/Views/Shared/Top.cshtml")
+2、顶部引用标签包，使用标签功能
+    @addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+    然后打上标签
+    <partial name="Top" />
