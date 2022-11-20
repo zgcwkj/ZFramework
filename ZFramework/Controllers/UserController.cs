@@ -88,7 +88,7 @@ where su.is_delete = 0 and su.user_id <> @userID", userID);
         /// <summary>
         /// 新增用户数据
         /// </summary>
-        /// <param name="Accounts">用户账号</param>
+        /// <param name="Accounts">用户帐号</param>
         /// <param name="UserName">用户名称</param>
         /// <param name="Password">用户密码</param>
         /// <returns></returns>
@@ -101,7 +101,7 @@ where su.is_delete = 0 and su.user_id <> @userID", userID);
 
             if (Accounts.IsNull())
             {
-                methodResult.ErrorMessage = "用户账号不能为空";
+                methodResult.ErrorMessage = "用户帐号不能为空";
                 return Json(methodResult);
             }
             if (UserName.IsNull())
@@ -119,13 +119,13 @@ where su.is_delete = 0 and su.user_id <> @userID", userID);
             Password = MD5Tool.GetMd5(Password);
 
             var cmd = DbProvider.Create();
-            //防止添加同样账号的用户
+            //防止添加同样帐号的用户
             cmd.Clear();
             cmd.SetCommandText(@"select count(0) from sysuser where is_delete = 0 and accounts = @accounts", Accounts);
             int userCount = cmd.QueryRowCount();
             if (userCount > 0)
             {
-                methodResult.ErrorMessage = "存在同样账号的用户";
+                methodResult.ErrorMessage = "存在同样帐号的用户";
                 return Json(methodResult);
             }
             //添加用户
@@ -169,7 +169,7 @@ insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,cre
         /// <summary>
         /// 修改用户数据
         /// </summary>
-        /// <param name="Accounts">用户账号</param>
+        /// <param name="Accounts">用户帐号</param>
         /// <param name="UserName">用户名称</param>
         /// <param name="Password">用户密码</param>
         /// <param name="UserID">用户ID</param>
@@ -183,7 +183,7 @@ insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,cre
 
             if (Accounts.IsNull())
             {
-                methodResult.ErrorMessage = "用户账号不能为空";
+                methodResult.ErrorMessage = "用户帐号不能为空";
                 return Json(methodResult);
             }
             if (UserName.IsNull())
@@ -197,7 +197,7 @@ insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,cre
             }
 
             var cmd = DbProvider.Create();
-            //防止修改成，除了本身的其它同样账号的用户
+            //防止修改成，除了本身的其它同样帐号的用户
             cmd.Clear();
             cmd.SetCommandText(@"select user_id from sysuser where accounts = @accounts", Accounts);
             DataRow userDataRow = cmd.QueryDataRow();
@@ -206,7 +206,7 @@ insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,cre
                 string userID = userDataRow["user_id"].ToStr();
                 if (userID != UserID)
                 {
-                    methodResult.ErrorMessage = "存在同样账号的用户";
+                    methodResult.ErrorMessage = "存在同样帐号的用户";
                     return Json(methodResult);
                 }
             }

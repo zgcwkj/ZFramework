@@ -24,7 +24,7 @@
             <h3>欢迎登录</h3>
             <div class="m-t" role="form">
                 <div class="form-group">
-                    <input type="email" class="form-control" id="accounts" placeholder="请输入登录账号" value="@ViewData["Accounts"]">
+                    <input type="email" class="form-control" id="accounts" placeholder="请输入登录帐号" value="@ViewData["Accounts"]">
                 </div>
                 <div class="form-group">
                     <input type="password" class="form-control" id="password" placeholder="请输入登录密码" value="@ViewData["Password"]">
@@ -90,7 +90,7 @@
             var accounts = $("#accounts").val();
             var password = $("#password").val();
             var captcha = $("#captcha").val();
-            if (accounts == "") { toastr.error("请输入登录账号"); return; }
+            if (accounts == "") { toastr.error("请输入登录帐号"); return; }
             if (password == "") { toastr.error("请输入登录密码"); return; }
             //发起网络请求
             $.post("/Admin/Login", {

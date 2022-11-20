@@ -26,7 +26,7 @@ namespace ZFramework.Controllers
             {
                 return RedirectToAction("Admin");
             }
-            //自动登录账号
+            //自动登录帐号
             if (CookieHelper.Get("Remember").IsNotNull())
             {
                 var accounts = CookieHelper.Get("Accounts");
@@ -73,7 +73,7 @@ namespace ZFramework.Controllers
         /// 登录验证
         /// </summary>
         /// <param name="rememberMe">是否记住用户</param>
-        /// <param name="accounts">用户账号</param>
+        /// <param name="accounts">用户帐号</param>
         /// <param name="password">用户密码</param>
         /// <param name="captcha">验证码</param>
         /// <returns></returns>
@@ -137,7 +137,7 @@ where su.is_delete = 0 and sr.is_delete = 0 and su.accounts = @accounts", accoun
                             }
                             else methodResult.ErrorMessage = "您输入的密码错误";
                         }
-                        else methodResult.ErrorMessage = "您输入的账号错误";
+                        else methodResult.ErrorMessage = "您输入的帐号错误";
                     }
                     else methodResult.ErrorMessage = "您输入的验证码错误";
                 }

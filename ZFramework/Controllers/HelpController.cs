@@ -20,7 +20,7 @@ namespace ZFramework.Controllers
         {
             #region 通知消息
 
-            var mesInfo = "请登录账号";
+            var mesInfo = "请登录帐号";
             var userID = SessionHelper.Get("UserID");
             if (!userID.IsNull())
             {

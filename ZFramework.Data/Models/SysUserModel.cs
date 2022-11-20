@@ -22,7 +22,7 @@ namespace ZFramework.Data.Models
         public string UserName { get; set; }
 
         /// <summary>
-        /// 账号
+        /// 帐号
         /// </summary>
         [Column("accounts"), StringLength(32)]
         public string Accounts { get; set; }
