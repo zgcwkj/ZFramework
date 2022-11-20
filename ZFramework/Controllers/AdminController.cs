@@ -4,6 +4,7 @@ using ZFramework.Comm.Base;
 using ZFramework.Comm.Common;
 using ZFramework.Comm.Filters;
 using ZFramework.Comm.Models;
+using ZFramework.Data;
 using zgcwkj.Util;
 using zgcwkj.Util.Common;
 
@@ -14,6 +15,19 @@ namespace ZFramework.Controllers
     /// </summary>
     public class AdminController : BaseController
     {
+        /// <summary>
+        /// 数据库连接对象
+        /// </summary>
+        private MyDbContext MyDb { get; }
+
+        /// <summary>
+        /// Admin控制器
+        /// </summary>
+        public AdminController(MyDbContext myDbContext)
+        {
+            this.MyDb = myDbContext;
+        }
+
         /// <summary>
         /// 登录页面
         /// </summary>
@@ -84,7 +98,6 @@ namespace ZFramework.Controllers
             methodResult.ErrorCode = -1;
             methodResult.ErrorMessage = "信息错误";
 
-            var cmd = DbProvider.Create();
             //防止页面的打开方式是不正确
             if (!SessionHelper.Get("ValidateCode").IsNull())
             {
@@ -93,29 +106,34 @@ namespace ZFramework.Controllers
 #endif
                 if (!rememberMe.IsNull() && !accounts.IsNull() && !password.IsNull() && !captcha.IsNull())
                 {
-                    string validateCode = SessionHelper.Get("ValidateCode").ToStr();
+                    var validateCode = SessionHelper.Get("ValidateCode").ToStr();
                     if (validateCode.ToLower() == captcha.ToLower())
                     {
-                        cmd.SetCommandText(@"
-select su.user_id,su.accounts,su.password,su.user_name,
-sr.role_id,sr.role_path
-from sysuser su
-INNER JOIN sysrole sr on su.user_id = sr.user_id
-where su.is_delete = 0 and sr.is_delete = 0 and su.accounts = @accounts", accounts);
-                        DataRow drUser = cmd.QueryDataRow();
-
-                        if (!drUser.IsNull())
+                        var linq = from su in MyDb.SysUserModel
+                                   join sr in MyDb.SysRoleModel on su.UserID equals sr.UserID
+                                   where su.IsDelete == 0 && sr.IsDelete == 0 && su.Accounts == accounts
+                                   select new
+                                   {
+                                       user_id = su.UserID,
+                                       accounts = su.Accounts,
+                                       password = su.Password,
+                                       user_name = su.UserName,
+                                       role_id = sr.RoleID,
+                                       role_path = sr.RolePath
+                                   };
+                        var linqData = linq.FirstOrDefault();
+                        if (linqData != null)
                         {
-                            string passwords = password;
+                            var passwords = password;
                             //将密码进行MD5加密
                             passwords = MD5Tool.GetMd5(passwords);
-                            if (drUser["password"].ToStr() == passwords)
+                            if (linqData.password == passwords)
                             {
                                 methodResult.ErrorCode = 0;
                                 methodResult.ErrorMessage = "登录成功，马上跳转";
 
                                 //重要的数据存储到Session中
-                                string remember = "checked";//记住密码
+                                var remember = "checked";//记住密码
                                 try
                                 {
                                     if (!rememberMe.ToBool())
@@ -127,10 +145,10 @@ where su.is_delete = 0 and sr.is_delete = 0 and su.accounts = @accounts", accoun
                                 }
                                 catch { }
 
-                                SessionHelper.Set("UserID", drUser["user_id"].ToStr());
-                                SessionHelper.Set("RoleID", drUser["role_id"].ToStr());
-                                SessionHelper.Set("RolePath", drUser["role_path"].ToStr());
-                                SessionHelper.Set("UserName", drUser["user_name"].ToStr());
+                                SessionHelper.Set("UserID", linqData.user_id);
+                                SessionHelper.Set("RoleID", linqData.role_id);
+                                SessionHelper.Set("RolePath", linqData.role_path);
+                                SessionHelper.Set("UserName", linqData.user_name);
                                 CookieHelper.Set("Accounts", accounts);
                                 CookieHelper.Set("Password", password);
                                 CookieHelper.Set("Remember", remember);
@@ -169,44 +187,24 @@ where su.is_delete = 0 and sr.is_delete = 0 and su.accounts = @accounts", accoun
         [HttpPost]
         public IActionResult Menu()
         {
-            string roleID = SessionHelper.Get("RoleID");
-            string rolePath = SessionHelper.Get("RolePath");
+            var roleID = SessionHelper.Get("RoleID");
+            var rolePath = SessionHelper.Get("RolePath");
 
-            var cmd = DbProvider.Create();
-            //SQL查询拥有的菜单
-            cmd.SetCommandText(@"
-select sm.menu_id,sm.parent_id,sm.title,sm.icon,sm.link,sm.sort
-from sysmenu sm
-INNER JOIN sysmenu_detail smd on sm.menu_id = smd.menu_id
-where sm.is_delete = 0 and smd.is_delete = 0 and smd.role_id = @roleID", roleID);
-            cmd.OrderBy("sm.Sort");
-            DataTable dataTable = cmd.QueryDataTable();
-            return Json(dataTable.ToList());
-        }
-
-        /// <summary>
-        /// 更改网站服务状态
-        /// </summary>
-        /// <returns></returns>
-        [Authorization]
-        [AcceptVerbs("GET", "POST")]
-        public IActionResult UpWebState()
-        {
-            var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
-
-            methodResult.ErrorMessage = "更改失败";
-            string userID = SessionHelper.Get("UserID");
-            if (userID == "admin")
-            {
-                var stopWebService = CacheAccess.Get<bool>("StopWebService");
-                CacheAccess.Set<bool>("StopWebService", !stopWebService);
-                methodResult.ErrorCode = 0;
-                methodResult.ErrorMessage = "已更改系统运行状态";
-            }
-
-            return Json(methodResult);
+            var linq = from sm in MyDb.SysMenuModel
+                       join smd in MyDb.SysMenuDetailModel on sm.MenuID equals smd.MenuID
+                       where sm.IsDelete == 0 && smd.IsDelete == 0 && smd.RoleID == roleID
+                       orderby sm.Sort
+                       select new
+                       {
+                           menu_id = sm.MenuID,
+                           parent_id = sm.ParentID,
+                           title = sm.Title,
+                           icon = sm.Icon,
+                           link = sm.Link,
+                           sort = sm.Sort
+                       };
+            var linqData = linq.ToList();
+            return Json(linqData);
         }
 
         /// <summary>
@@ -229,16 +227,20 @@ where sm.is_delete = 0 and smd.is_delete = 0 and smd.role_id = @roleID", roleID)
                 return Json(methodResult);
             }
 
+            var updCount = 0;
+            var userID = SessionHelper.Get("UserID");
             //把密码加密一遍
             Password = MD5Tool.GetMd5(Password);
             toPassword = MD5Tool.GetMd5(toPassword);
 
-            var cmd = DbProvider.Create();
-            string userID = SessionHelper.Get("UserID");
-            cmd.SetCommandText(@"
-update sysuser set user_name = @userName,password = @toPassword
-where is_delete = 0 and user_id = @userID and password = @password", Name, toPassword, userID, Password);
-            int updCount = cmd.UpdateData();
+            var linqData = MyDb.SysUserModel.Where(W => W.IsDelete == 0 && W.UserID == userID && W.Password == Password).FirstOrDefault();
+            if (linqData != null)
+            {
+                linqData.UserName = Name;
+                linqData.Password = toPassword;
+                MyDb.SysUserModel.UpdateRange(linqData);
+                updCount = MyDb.SaveChanges();
+            }
 
             if (updCount > 0)
             {

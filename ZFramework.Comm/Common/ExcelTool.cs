@@ -91,7 +91,7 @@ namespace ZFramework.Comm.Common
                     }
                     ++count;
                 }
-                workbook.Write(fs); //写入到excel
+                workbook.Write(fs, true); //写入到excel
                 return count;
             }
             catch (Exception ex)
