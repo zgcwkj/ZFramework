@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
 
+#pragma warning disable CA1416 //禁用验证平台兼容性
 namespace ZFramework.Comm.Common
 {
     /// <summary>
@@ -162,3 +163,4 @@ namespace ZFramework.Comm.Common
         }
     }
 }
+#pragma warning restore CA1416

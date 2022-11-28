@@ -76,9 +76,7 @@ namespace ZFramework.Controllers
         [HttpGet]
         public IActionResult ValidateImage()
         {
-            //var vCode = new ValidateCode(6);
-            //SessionHelper.Set("ValidateCode", vCode.GetValidate());
-            var tuple = CaptchaCode.GetImgData();
+            var tuple = CaptchaCodeSK.GetImgData();
             SessionHelper.Set("ValidateCode", tuple.Item1);
             return File(tuple.Item2, "image/jpg");
         }
