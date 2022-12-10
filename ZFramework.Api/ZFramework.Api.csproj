@@ -10,4 +10,12 @@
 	  <ProjectReference Include="..\ZFramework.Comm\ZFramework.Comm.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="NPOI" Version="2.6.0" />
+		<PackageReference Include="SkiaSharp" Version="2.88.3" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.3" />
+		<PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="2.88.3" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="2.88.3" />
+	</ItemGroup>
+
 </Project>
