@@ -47,6 +47,7 @@ namespace ZFramework.Controllers
                 var password = CookieHelper.Get("Password");
                 var remember = CookieHelper.Get("Remember");
                 remember = remember == "checked" ? "true" : "false";
+                if (!remember.ToBool()) return View();//取消向下执行
                 var validateCode = "zgcwkjToken";//验证码
                 SessionHelper.Set("ValidateCode", validateCode);
                 var result = Login(remember, accounts, password, validateCode) as dynamic;
