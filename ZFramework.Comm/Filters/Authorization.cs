@@ -68,7 +68,7 @@ namespace ZFramework.Comm.Filters
             //读取 Session
             this.UserID = SessionHelper.Get("UserID").ToStr();
             this.RolePath = SessionHelper.Get("RolePath").ToStr();
-            if (UserID == null || RolePath == null)
+            if (UserID.IsNull() || RolePath.IsNull())
             {
                 string message = WebUtility.UrlEncode("验证过期");
                 context.Result = new RedirectResult($"/Admin/Index?Data={message}");
