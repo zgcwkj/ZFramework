@@ -55,6 +55,12 @@ namespace ZFramework.Comm.Filters
             var httpContext = context.HttpContext;
             var request = httpContext.Request;
             var toUserIP = httpContext.Connection.RemoteIpAddress.ToStr();//获取访问者IP
+            if (toUserIP == "127.0.0.1")
+            {
+                //反代理时获取真实IP
+                var RealIP = request.Headers["X-Real-IP"].ToStr();
+                if (!RealIP.IsNull()) toUserIP = RealIP;
+            }
             var toMethod = request.Method;//获取访问类型
             var toUserAgent = request.Headers.UserAgent;//获取访问者信息
             var parameterData = GetParameter(request);//获取请求参数
@@ -62,7 +68,6 @@ namespace ZFramework.Comm.Filters
             var toClass = toController.ControllerName;//获取访问控制器
             var toAction = toController.ActionName;//获取访问动作
             var toPath = request.Path.Value;//获取访问地址
-            var toType = request.Headers["AppVersion"].ToStr();
             //放行请求
             if (LetGO(toPath)) await next();
             //读取 Session

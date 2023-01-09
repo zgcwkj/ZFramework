@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.FileProviders;
-using SQLitePCL;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using ZFramework.Comm.Filters;
 using ZFramework.Data;
+using ZFramework.Quartz;
 using zgcwkj.Util;
 
 namespace ZFramework
@@ -22,14 +22,10 @@ namespace ZFramework
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            //Service
-            builder.Services.ConfigureServices();
-            //Injection
-            builder.Services.AddInjection();
-            //App
+            builder.Services.ConfigureServices(builder);
+            builder.Services.AddInjection(builder);
             var app = builder.Build();
-            app.Configure();
-            //Run
+            app.Configure(builder);
             app.Run();
         }
 
@@ -38,8 +34,13 @@ namespace ZFramework
         /// 使用此方法将服务添加到容器中
         /// </summary>
         /// <param name="services">服务</param>
-        public static void ConfigureServices(this IServiceCollection services)
+        /// <param name="builder">网站程序</param>
+        public static void ConfigureServices(this IServiceCollection services, WebApplicationBuilder builder)
         {
+            //主机环境
+            GlobalContext.HostingEnvironment = builder.Environment;
+            //所有注册服务和类实例容器
+            GlobalContext.Services = services;
             //添加单例
             services.AddSingleton(HtmlEncoder.Create(UnicodeRanges.All));
             //注册编码
@@ -74,8 +75,8 @@ namespace ZFramework
             });
             //配置 Swagger
             services.AddSwagger();
-            //所有注册服务和类实例容器
-            GlobalContext.Services = services;
+            //配置 定时任务
+            services.AddQuartzJob();
         }
 
         /// <summary>
@@ -83,14 +84,15 @@ namespace ZFramework
         /// 使用此方法配置HTTP请求流水线
         /// </summary>
         /// <param name="app">应用</param>
-        public static void Configure(this WebApplication app)
+        /// <param name="builder">网站程序</param>
+        public static void Configure(this WebApplication app, WebApplicationBuilder builder)
         {
             //主机环境
-            GlobalContext.HostingEnvironment = app.Environment;
-            //配置对象
-            GlobalContext.Configuration = app.Configuration;
+            GlobalContext.HostingEnvironment = builder.Environment;
             //服务提供者
             GlobalContext.ServiceProvider = app.Services;
+            //配置对象
+            GlobalContext.Configuration = app.Configuration;
             //判断运行模式
             if (GlobalConstant.IsDevelopment)
             {
@@ -101,8 +103,6 @@ namespace ZFramework
             }
             else
             {
-                //启动定时任务
-                Quartz.QuartzJobServer.Start();
                 //正式环境自定义错误页
                 app.UseExceptionHandler("/Help/Error");
                 //捕获全局的请求
@@ -137,7 +137,7 @@ namespace ZFramework
             //默认的静态目录路径
             app.UseStaticFiles();
             //用户自定义静态目录
-            string resource = Path.Combine(app.Environment.ContentRootPath, "Resource");
+            var resource = Path.Combine(app.Environment.ContentRootPath, "Resource");
             if (!Directory.Exists(resource)) Directory.CreateDirectory(resource);
             app.UseStaticFiles(new StaticFileOptions
             {
@@ -152,23 +152,23 @@ namespace ZFramework
             //用户授权
             app.UseAuthorization();
             //用户默认路由
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "areaRoute",
-                    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Admin}/{action=Index}/{id?}");
-            });
+            app.MapControllerRoute(
+                name: "areaRoute",
+                pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Admin}/{action=Index}/{id?}");
         }
 
         /// <summary>
         /// 依赖注入
         /// </summary>
         /// <param name="services">服务</param>
-        public static void AddInjection(this IServiceCollection services)
+        /// <param name="builder">网站程序</param>
+        public static void AddInjection(this IServiceCollection services, WebApplicationBuilder builder)
         {
+            //主机环境
+            GlobalContext.HostingEnvironment = builder.Environment;
             //数据库上下文
             services.AddDbContext<MyDbContext>();
             //缓存数据上下文
