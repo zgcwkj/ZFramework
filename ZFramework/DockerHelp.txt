@@ -1,0 +1,11 @@
+构建
+docker build -f ZFramework/Dockerfile -t zframework .
+
+运行
+docker run -it -p 5231:80 zframework:latest
+
+导出
+docker save -o zframework.tar zframework:latest
+
+导入
+docker load -i zframework.tarx
