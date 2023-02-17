@@ -24,7 +24,7 @@ RUN dotnet build "ZFramework.csproj" -c Release -o /app/build
 # 构建数据库
 WORKDIR "/src/ZFramework.Data"
 RUN dotnet tool install -g dotnet-ef
-#RUN dotnet ef migrations add init
+RUN dotnet ef migrations add init
 RUN dotnet ef database update
 RUN cp -r zframework_db.db /app
 

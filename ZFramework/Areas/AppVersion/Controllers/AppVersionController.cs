@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using ZFramework.Comm.Base;
 using ZFramework.Comm.Filters;
@@ -16,6 +17,19 @@ namespace ZFramework.Areas.ChartData.Controllers
     [Area("AppVersion")]
     public class AppVersionController : BaseController
     {
+        /// <summary>
+        /// 数据库上下文
+        /// </summary>
+        private MyDbContext MyDb { get; }
+
+        /// <summary>
+        /// 对象实例时
+        /// </summary>
+        public AppVersionController(MyDbContext myDb)
+        {
+            this.MyDb = myDb;
+        }
+
         /// <summary>
         /// 版本控制页面
         /// </summary>
@@ -42,11 +56,10 @@ namespace ZFramework.Areas.ChartData.Controllers
             methodResult.ErrorCode = -1;
             methodResult.ErrorMessage = "信息错误";
 
-            using var myDbContext = new MyDbContext();
             var pageOffset = (Page - 1) * PageSize;
-            string rolePath = SessionHelper.Get("RolePath").ToStr();
+            var rolePath = SessionHelper.Get("RolePath").ToStr();
             //Linq
-            var linqData = from bav in myDbContext.BusAppVersionModel select bav;
+            var linqData = from bav in this.MyDb.BusAppVersionModel select bav;
             //条件
             if (QueryLikeStr.IsNotNull()) linqData = linqData.Where(T => T.AppName.Contains(QueryLikeStr) || T.AppVersion.Contains(QueryLikeStr));
             if (BeginDate.IsNotNull())
@@ -91,20 +104,20 @@ namespace ZFramework.Areas.ChartData.Controllers
             methodResult.ErrorMessage = "信息错误";
 
             //获取文件扩展名
-            string Fileexc = Path.GetExtension(file.FileName);
+            var Fileexc = Path.GetExtension(file.FileName);
             //保存路径
-            string filePath = Path.Combine(GlobalConstant.GetRunPath, "Resource/Temp");
+            var filePath = Path.Combine(GlobalConstant.GetRunPath, "Resource/Temp");
             //防止文件夹没有
             if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
             //文件名称
-            string fileName = $"{DateTime.Now:yyyyMMddHHmmss}_{file.FileName}";
+            var fileName = $"{DateTime.Now:yyyyMMddHHmmss}_{file.FileName}";
             //文件路径
             filePath = Path.Combine(filePath, fileName);
             //存储文件
             using (var stream = file.OpenReadStream())
             {
                 //准备文件流
-                byte[] bytes = new byte[stream.Length];
+                var bytes = new byte[stream.Length];
                 stream.Read(bytes, 0, bytes.Length);
                 //准备存储文件
                 using var fileStream = new FileStream(filePath, FileMode.Create);
@@ -112,9 +125,8 @@ namespace ZFramework.Areas.ChartData.Controllers
             }
 
             //查询最新的版本号
-            using var myDbContext = new MyDbContext();
             var appStateToFind = new List<int> { 0, 1 };
-            var linqData = myDbContext.BusAppVersionModel.Where(T => appStateToFind.Contains(T.AppState)).OrderByDescending(T => T.UploadTime).FirstOrDefault();
+            var linqData = this.MyDb.BusAppVersionModel.Where(T => appStateToFind.Contains(T.AppState)).OrderByDescending(T => T.UploadTime).FirstOrDefault();
             if (linqData == null) linqData = new BusAppVersionModel();
             var appVersion = linqData.AppVersion;
             var appVersionInt = appVersion.Replace(".", "").ToInt();
@@ -152,9 +164,9 @@ namespace ZFramework.Areas.ChartData.Controllers
             if (FileName.IsNull()) return Json(methodResult);
             if (Version.IsNull()) return Json(methodResult);
 
-            string rolePath = SessionHelper.Get("RolePath").ToStr();
+            var rolePath = SessionHelper.Get("RolePath").ToStr();
             //目标位置
-            string targetPath = Path.Combine(GlobalConstant.GetRunPath, "Resource/AppVersion");
+            var targetPath = Path.Combine(GlobalConstant.GetRunPath, "Resource/AppVersion");
             //防止文件夹没有
             if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
             var okPath = Path.Combine(targetPath, $"{DateTime.Now:yyyyMMddHHmmss}_{FileName}");
@@ -163,7 +175,6 @@ namespace ZFramework.Areas.ChartData.Controllers
             //统一文件路径
             okPath = okPath.Replace(GlobalConstant.GetRunPath, "").Replace("\\", "/")[1..];
             //新增数据
-            using var myDbContext = new MyDbContext();
             var appVersionModel = new BusAppVersionModel();
             appVersionModel.AppID = GlobalConstant.GuidMd5;
             appVersionModel.AppName = FileName;
@@ -174,8 +185,8 @@ namespace ZFramework.Areas.ChartData.Controllers
             appVersionModel.AppState = 1;
             appVersionModel.RolePath = rolePath;
             appVersionModel.UploadTime = DateTime.Now;
-            myDbContext.Add(appVersionModel);
-            myDbContext.SaveChanges();
+            this.MyDb.Add(appVersionModel);
+            this.MyDb.SaveChanges();
 
             methodResult.ErrorCode = 0;
             methodResult.ErrorMessage = "新增完成";
@@ -197,15 +208,17 @@ namespace ZFramework.Areas.ChartData.Controllers
 
             if (IDS.IsNull()) return Json(methodResult);
             if (State.IsNull()) return Json(methodResult);
-
-            IDS = IDS.Replace(",", "','");
-            //using var myDbContext = new MyDbContext();
-            var cmd = DbProvider.Create();
-            cmd.Clear();
-            cmd.SetCommandText($@"update bus_appversion set app_state = @appState where app_id in ('{IDS}')", State.ToInt());
-            int updateCount = cmd.UpdateData();
-            string message = State == "0" ? "停用" : "启用";
-
+            //批量修改
+            var appIDs = IDS.Split(',');
+            var data = this.MyDb.BusAppVersionModel.Where(W => appIDs.Contains(W.AppID));
+            data.ForEachAsync(F =>
+            {
+                F.AppState= State.ToInt();
+            });
+            this.MyDb.SaveChanges();
+            //结果描述文字
+            var message = State == "0" ? "停用" : "启用";
+            
             methodResult.ErrorCode = 0;
             methodResult.ErrorMessage = $"{message}完成";
             return Json(methodResult);
