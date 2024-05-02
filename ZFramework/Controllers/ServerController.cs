@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ZFramework.Comm.Base;
-using ZFramework.Comm.Filters;
 
 namespace ZFramework.Controllers
 {

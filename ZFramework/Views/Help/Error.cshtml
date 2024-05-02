@@ -26,8 +26,8 @@
         var error = "@ViewData["html"]";
         $(function () {
             $.post("/Log/InsertLogData", {
-                FilePath: error,
-                ControllerName: error,
+                filePath: error,
+                controllerName: error,
             }, function (data) {
                 console.log(data);
             });

@@ -88,6 +88,16 @@ namespace ZFramework.Data.DefaultData
                     CreatorID = "",
                 });
 
+                lists.Add(new SysMenuDetailModel
+                {
+                    MdetailID = MD5Tool.GetMd5("8"),
+                    MenuID = 8,
+                    RoleID = "admin",
+                    IsDelete = 0,
+                    CreateTime = "2020-01-01".ToDate(),
+                    CreatorID = "",
+                });
+
                 return lists;
             }
         }

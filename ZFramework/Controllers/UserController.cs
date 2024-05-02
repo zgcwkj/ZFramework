@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Data;
-using ZFramework.Comm.Base;
-using ZFramework.Comm.Filters;
-using ZFramework.Comm.Models;
-using zgcwkj.Util;
 using zgcwkj.Util.Common;
 
 namespace ZFramework.Controllers
@@ -14,6 +10,19 @@ namespace ZFramework.Controllers
     [Authorization]
     public class UserController : BaseController
     {
+        /// <summary>
+        /// 数据库连接对象
+        /// </summary>
+        private MyDbContext MyDb { get; }
+
+        /// <summary>
+        /// 用户控制器
+        /// </summary>
+        public UserController(MyDbContext myDbContext)
+        {
+            this.MyDb = myDbContext;
+        }
+
         /// <summary>
         /// 用户管理
         /// </summary>
@@ -27,118 +36,113 @@ namespace ZFramework.Controllers
         /// <summary>
         /// 查询用户数据
         /// </summary>
-        /// <param name="Page">页码</param>
-        /// <param name="PageSize">每页数量</param>
-        /// <param name="QueryLikeStr">模糊搜索内容</param>
-        /// <param name="BeginDate">开始时间</param>
-        /// <param name="EndDate">结束时间</param>
+        /// <param name="page">页码</param>
+        /// <param name="pageSize">每页数量</param>
+        /// <param name="queryLikeStr">模糊搜索内容</param>
+        /// <param name="startDate">开始时间</param>
+        /// <param name="endDate">结束时间</param>
         [HttpPost]
-        public IActionResult InquireUserData(int Page, int PageSize, string QueryLikeStr, string BeginDate, string EndDate)
+        public IActionResult InquireUserData(int page, int pageSize, string queryLikeStr, string startDate, string endDate)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
-
-            int pageOffset = (Page - 1) * PageSize;
-            string userID = SessionHelper.Get("UserID");
-            //查数据
-            var cmd = DbProvider.Create();
-            cmd.Clear();
-            cmd.SetCommandText(@"
-select su.user_id,su.accounts,su.user_name,su.create_time
-from sysuser su
-INNER JOIN (
-	select sr.user_id
-	from sysrole sr
-	INNER JOIN (
-		select sr.role_path
-		from sysuser su
-		INNER JOIN sysrole sr on su.user_id = sr.user_id
-		where su.is_delete = 0 and su.user_id = @userID) usr on sr.role_path like concat('%',usr.role_path,'%')
-) sr on su.user_id = sr.user_id
-where su.is_delete = 0 and su.user_id <> @userID", userID);
-            cmd.AppendAnd("su.user_name like concat('%',@queryLikeStr,'%')", QueryLikeStr);
-            cmd.OrderBy(@"create_time desc");
-            cmd.SetEndSql($"limit {pageOffset},{PageSize}");
-            DataTable dataTable = cmd.QueryDataTable();
-            methodResult.Data = dataTable.ToList();
-
-            //查总数
-            cmd.Clear();
-            cmd.SetCommandText(@"
-select count(0)
-from sysuser su
-INNER JOIN (
-	select sr.user_id
-	from sysrole sr
-	INNER JOIN (
-		select sr.role_path
-		from sysuser su
-		INNER JOIN sysrole sr on su.user_id = sr.user_id
-		where su.is_delete = 0 and su.user_id = @userID) usr on sr.role_path like concat('%',usr.role_path,'%')
-) sr on su.user_id = sr.user_id
-where su.is_delete = 0 and su.user_id <> @userID", userID);
-            methodResult.DataCount = cmd.QueryRowCount();
-
-            methodResult.ErrorCode = 0;
-            methodResult.ErrorMessage = "查询完成";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
+            //
+            var pageOffset = (page - 1) * pageSize;
+            var userID = SessionHelper.Get("UserID");
+            //Linq
+            var linqData = from su in MyDb.SysUserModel
+                           join sr in (
+                               from sr1 in MyDb.SysRoleModel
+                               from sr2 in MyDb.SysRoleModel
+                               join su1 in MyDb.SysUserModel on sr2.UserID equals su1.UserID
+                               where su1.IsDelete == 0 && su1.UserID == userID
+                               where sr1.RolePath.Contains(sr2.RolePath)
+                               select new { sr1.UserID }
+                           ) on su.UserID equals sr.UserID
+                           where su.IsDelete == 0// && su.UserID != userID
+                           select su;
+            //条件
+            if (queryLikeStr.IsNotNull()) linqData = linqData.Where(T => T.UserName.Contains(queryLikeStr) || T.Accounts.Contains(queryLikeStr));
+            if (startDate.IsNotNull())
+            {
+                var toBeginDate = startDate.ToDate();
+                linqData = linqData.Where(T => T.CreateTime >= toBeginDate);
+            }
+            if (endDate.IsNotNull())
+            {
+                var toEndDate = endDate.ToDate();
+                linqData = linqData.Where(T => T.CreateTime <= toEndDate);
+            }
+            //格式化
+            methodResult.Data = linqData.OrderByDescending(T => T.CreateTime).Select(T => new
+            {
+                user_id = T.UserID,
+                accounts = T.Accounts,
+                user_name = T.UserName,
+                create_time = T.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+            }).Skip(pageOffset).Take(pageSize).ToList();
+            methodResult.Total = linqData.Count();
+            //
+            methodResult.Code = 0;
+            methodResult.Msg = "查询完成";
             return Json(methodResult);
         }
 
         /// <summary>
         /// 新增用户数据
         /// </summary>
-        /// <param name="Accounts">用户帐号</param>
-        /// <param name="UserName">用户名称</param>
-        /// <param name="Password">用户密码</param>
+        /// <param name="accounts">用户帐号</param>
+        /// <param name="userName">用户名称</param>
+        /// <param name="password">用户密码</param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult InsertUserData(string Accounts, string UserName, string Password)
+        public IActionResult InsertUserData(string accounts, string userName, string password)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
-            if (Accounts.IsNull())
+            if (accounts.IsNull())
             {
-                methodResult.ErrorMessage = "用户帐号不能为空";
+                methodResult.Msg = "用户帐号不能为空";
                 return Json(methodResult);
             }
-            if (UserName.IsNull())
+            if (userName.IsNull())
             {
-                methodResult.ErrorMessage = "用户名称不能为空";
+                methodResult.Msg = "用户名称不能为空";
                 return Json(methodResult);
             }
-            if (Password.IsNull())
+            if (password.IsNull())
             {
-                methodResult.ErrorMessage = "用户密码不能为空";
+                methodResult.Msg = "用户密码不能为空";
                 return Json(methodResult);
             }
 
             //把密码加密一遍
-            Password = MD5Tool.GetMd5(Password);
+            password = MD5Tool.GetMd5(password);
 
-            var cmd = DbProvider.Create();
+            var cmd = DbProvider.Create(MyDb);
             //防止添加同样帐号的用户
             cmd.Clear();
-            cmd.SetCommandText(@"select count(0) from sysuser where is_delete = 0 and accounts = @accounts", Accounts);
+            cmd.SetCommandText(@"select count(0) from sysuser where is_delete = 0 and accounts = @accounts", accounts);
             int userCount = cmd.QueryRowCount();
             if (userCount > 0)
             {
-                methodResult.ErrorMessage = "存在同样帐号的用户";
+                methodResult.Msg = "存在同样帐号的用户";
                 return Json(methodResult);
             }
             //添加用户
-            string userID = SessionHelper.Get("UserID");
-            string newUserID = GlobalConstant.GuidMd5;
+            var userID = SessionHelper.Get("UserID");
+            var newUserID = GlobalConstant.GuidMd5;
             cmd.Clear();
             cmd.SetCommandText(@"
 insert into sysuser(user_id,accounts,user_name,password,load_rp,is_delete,create_time,creator_id)
-values(@userID,@accounts,@userName,@password,0,0,now(),@creatorID)", newUserID, Accounts, UserName, Password, userID);
+values(@userID,@accounts,@userName,@password,0,0,now(),@creatorID)", newUserID, accounts, userName, password, userID);
             int insUserCount = cmd.UpdateData();
             //权限表创建对应关系
-            string rolePath = SessionHelper.Get("RolePath");
-            string newRoleID = GlobalConstant.GuidMd5;
+            var rolePath = SessionHelper.Get("RolePath");
+            var newRoleID = GlobalConstant.GuidMd5;
             cmd.Clear();
             cmd.SetCommandText(@"
 insert into sysrole(role_id,role_path,user_id,is_delete,create_time,creator_id)
@@ -150,18 +154,18 @@ values(@roleID,@rolePath,@userID,0,now(),@creatorID)", newRoleID, $"{rolePath}_{
 insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,creator_id) values ('{GlobalConstant.GuidMd5}','1',@roleID,'0',now(),@creatorID);
 insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,creator_id) values ('{GlobalConstant.GuidMd5}','2',@roleID,'0',now(),@creatorID);
 
-insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,creator_id) values ('{GlobalConstant.GuidMd5}','6',@roleID,'0',now(),@creatorID);
-insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,creator_id) values ('{GlobalConstant.GuidMd5}','7',@roleID,'0',now(),@creatorID)
+insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,creator_id) values ('{GlobalConstant.GuidMd5}','7',@roleID,'0',now(),@creatorID);
+insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,creator_id) values ('{GlobalConstant.GuidMd5}','8',@roleID,'0',now(),@creatorID)
 ", newRoleID, userID);
-            int insMenuCount = cmd.UpdateData();
+            var insMenuCount = cmd.UpdateData();
             if (insUserCount > 0 && insRoleCount > 0 && insMenuCount > 0)
             {
-                methodResult.ErrorCode = 0;
-                methodResult.ErrorMessage = "新增成功";
+                methodResult.Code = 0;
+                methodResult.Msg = "新增成功";
             }
             else
             {
-                methodResult.ErrorMessage = "新增失败";
+                methodResult.Msg = "新增失败";
             }
             return Json(methodResult);
         }
@@ -169,75 +173,75 @@ insert into sysmenu_detail (mdetail_id,menu_id,role_id,is_delete,create_time,cre
         /// <summary>
         /// 修改用户数据
         /// </summary>
-        /// <param name="Accounts">用户帐号</param>
-        /// <param name="UserName">用户名称</param>
-        /// <param name="Password">用户密码</param>
-        /// <param name="UserID">用户ID</param>
+        /// <param name="accounts">用户帐号</param>
+        /// <param name="userName">用户名称</param>
+        /// <param name="password">用户密码</param>
+        /// <param name="userID">用户ID</param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult UpdateUserData(string Accounts, string UserName, string Password, string UserID)
+        public IActionResult UpdateUserData(string accounts, string userName, string password, string userID)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
-            if (Accounts.IsNull())
+            if (accounts.IsNull())
             {
-                methodResult.ErrorMessage = "用户帐号不能为空";
+                methodResult.Msg = "用户帐号不能为空";
                 return Json(methodResult);
             }
-            if (UserName.IsNull())
+            if (userName.IsNull())
             {
-                methodResult.ErrorMessage = "用户名称不能为空";
+                methodResult.Msg = "用户名称不能为空";
                 return Json(methodResult);
             }
-            if (UserID.IsNull())
+            if (userID.IsNull())
             {
                 return Json(methodResult);
             }
 
-            var cmd = DbProvider.Create();
+            var cmd = DbProvider.Create(MyDb);
             //防止修改成，除了本身的其它同样帐号的用户
             cmd.Clear();
-            cmd.SetCommandText(@"select user_id from sysuser where accounts = @accounts", Accounts);
-            DataRow userDataRow = cmd.QueryDataRow();
+            cmd.SetCommandText(@"select user_id from sysuser where accounts = @accounts", accounts);
+            var userDataRow = cmd.QueryDataRow();
             if (!userDataRow.IsNull())
             {
-                string userID = userDataRow["user_id"].ToStr();
-                if (userID != UserID)
+                var userIDTemp = userDataRow["user_id"].ToStr();
+                if (userID != userIDTemp)
                 {
-                    methodResult.ErrorMessage = "存在同样帐号的用户";
+                    methodResult.Msg = "存在同样帐号的用户";
                     return Json(methodResult);
                 }
             }
             //看看改不改密码
-            if (Password.IsNull())
+            if (password.IsNull())
             {
                 cmd.Clear();
                 cmd.SetCommandText(@"
 update sysuser
 set accounts = @accounts,user_name = @userName
-where user_id = @userID", Accounts, UserName, UserID);
+where user_id = @userID", accounts, userName, userID);
             }
             else
             {
-                Password = MD5Tool.GetMd5(Password);
+                password = MD5Tool.GetMd5(password);
                 cmd.Clear();
                 cmd.SetCommandText(@"
 update sysuser
 set accounts = @accounts,password = @password,user_name = @userName
-where user_id = @userID", Accounts, Password, UserName, UserID);
+where user_id = @userID", accounts, password, userName, userID);
             }
-            int updateCount = cmd.UpdateData();
+            var updateCount = cmd.UpdateData();
 
             if (updateCount > 0)
             {
-                methodResult.ErrorCode = 0;
-                methodResult.ErrorMessage = "修改成功";
+                methodResult.Code = 0;
+                methodResult.Msg = "修改成功";
             }
             else
             {
-                methodResult.ErrorMessage = "修改失败";
+                methodResult.Msg = "修改失败";
             }
             return Json(methodResult);
         }
@@ -245,39 +249,34 @@ where user_id = @userID", Accounts, Password, UserName, UserID);
         /// <summary>
         /// 删除用户数据
         /// </summary>
-        /// <param name="IDS">ID集合</param>
+        /// <param name="ids">ID集合</param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult DeleteUserData(string IDS)
+        public IActionResult DeleteUserData(string ids)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "删除失败";
 
-            if (IDS.IsNull())
+            if (ids.IsNull())
             {
                 return Json(methodResult);
             }
 
-            int delectCount = 0;//统计删除的数量
-            string[] IDs = IDS.Split(',');
-
-            var cmd = DbProvider.Create();
-            foreach (var id in IDs)
+            var iDs = ids.Split(',');
+            var delLinq = MyDb.SysUserModel.Where(w => iDs.Contains(w.UserID));
+            if (delLinq.Any())
             {
-                cmd.Clear();
-                cmd.SetCommandText(@"update sysuser set is_delete = 1 where user_id = @userID", id);
-                delectCount += cmd.UpdateData();
+                delLinq.ToList().ForEach(f =>
+                {
+                    f.IsDelete = 1;
+                });
             }
-
-            if (delectCount > 0)
+            var delCount = MyDb.SaveChanges();
+            if (delCount > 0)
             {
-                methodResult.ErrorCode = 0;
-                methodResult.ErrorMessage = "删除成功";
-            }
-            else
-            {
-                methodResult.ErrorMessage = "删除失败";
+                methodResult.Code = 0;
+                methodResult.Msg = "删除成功";
             }
 
             return Json(methodResult);

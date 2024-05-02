@@ -46,14 +46,14 @@
                 },
                 parseData: function (res) {
                     return {
-                        "code": res.ErrorCode,//解析接口状态
-                        "msg": res.ErrorMessage,//解析提示文本
-                        "count": res.DataCount,//解析数据长度
-                        "data": res.Data,//解析数据列表
+                        "code": res.code,//解析接口状态
+                        "msg": res.msg,//解析提示文本
+                        "count": res.total,//解析数据长度
+                        "data": res.data,//解析数据列表
                     };
                 },
                 where: {
-                    QueryLikeStr: '',
+                    queryLikeStr: '',
                 },
                 cols: [[
                     { type: 'checkbox', fixed: 'left' },
@@ -64,8 +64,8 @@
                     {
                         field: 'canteenOperat', title: '操作', templet: function (d) {
                             var html = '';
-                            html += '<a class="layui-btn layui-btn-warm layui-btn-sm" onclick="UpdateDate(' + d.LAY_TABLE_INDEX + ')">修改</a>';
-                            html += '<a class="layui-btn layui-btn-danger layui-btn-sm" onclick="DeleteDate(' + d.LAY_TABLE_INDEX + ')">删除</a>';
+                            html += '<a class="layui-btn layui-btn-warm layui-btn-sm" onclick="UpdateDate(' + d.LAY_INDEX + ')">修改</a>';
+                            html += '<a class="layui-btn layui-btn-danger layui-btn-sm" onclick="DeleteDate(' + d.LAY_INDEX + ')">删除</a>';
                             return html
                         }, fixed: 'right', width: 140
                     },
@@ -78,19 +78,19 @@
         _html += "  <div class='layui-form-item'>";
         _html += "    <label class='layui-form-label'>用户帐号</label>";
         _html += "    <div class='layui-input-block'>";
-        _html += "      <input class='layui-input' type='text' autocomplete='off' id='accounts' placeholder='请输入用户帐号'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='Accounts' placeholder='请输入用户帐号'>";
         _html += "    </div>";
         _html += "  </div>";
         _html += "  <div class='layui-form-item'>";
         _html += "    <label class='layui-form-label'>用户名称</label>";
         _html += "    <div class='layui-input-block'>";
-        _html += "      <input class='layui-input' type='text' autocomplete='off' id='user_name' placeholder='请输入用户名称'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='UserName' placeholder='请输入用户名称'>";
         _html += "    </div>";
         _html += "  </div>";
         _html += "  <div class='layui-form-item'>";
         _html += "    <label class='layui-form-label'>用户密码</label>";
         _html += "    <div class='layui-input-block'>";
-        _html += "      <input class='layui-input' type='text' autocomplete='off' id='password' placeholder='请输入用户密码'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='Password' placeholder='请输入用户密码'>";
         _html += "    </div>";
         _html += "  </div>";
         _html += "</div>";
@@ -98,7 +98,7 @@
         function SearchData() {
             table.reload('TableData', {
                 where: {
-                    QueryLikeStr: $("#QueryLikeStr").val(),
+                    queryLikeStr: $("#QueryLikeStr").val(),
                 }
             });
         }
@@ -111,20 +111,20 @@
                 title: "新增用户",
                 btn: ["确定", "取消"],
                 yes: function (index, layero) {
-                    var accounts = $("#accounts").val();
-                    var user_name = $("#user_name").val();
-                    var password = $("#password").val();
+                    var accounts = $("#Accounts").val();
+                    var user_name = $("#UserName").val();
+                    var password = $("#Password").val();
                     if (accounts != "" && user_name != "" && password != "") {
                         $.post("/User/InsertUserData", {
-                            Accounts: accounts,
-                            UserName: user_name,
-                            Password: password,
+                            accounts: accounts,
+                            userName: user_name,
+                            password: password,
                         }, function (data) {
-                            if (data.ErrorCode == 0) {
-                                layer.msg(data.ErrorMessage, { icon: 1 });
+                            if (data.code == 0) {
+                                layer.msg(data.msg, { icon: 1 });
                                 SearchData();
                             } else {
-                                layer.msg(data.ErrorMessage, { icon: 5 });
+                                layer.msg(data.msg, { icon: 5 });
                             }
                         });
                     } else {
@@ -144,25 +144,25 @@
                 title: "修改用户",
                 btn: ["确定", "取消"],
                 success: function (layero, index) {
-                    $("#accounts").val(row.accounts);
-                    $("#user_name").val(row.user_name);
+                    $("#Accounts").val(row.accounts);
+                    $("#UserName").val(row.user_name);
                 },
                 yes: function (index, layero) {
-                    var accounts = $("#accounts").val();
-                    var user_name = $("#user_name").val();
-                    var password = $("#password").val();
+                    var accounts = $("#Accounts").val();
+                    var user_name = $("#UserName").val();
+                    var password = $("#Password").val();
                     if (accounts != "" && user_name != "") {
                         $.post("/User/UpdateUserData", {
-                            Accounts: accounts,
-                            UserName: user_name,
-                            Password: password,
-                            UserID: row.user_id,
+                            accounts: accounts,
+                            userName: user_name,
+                            password: password,
+                            userID: row.user_id,
                         }, function (data) {
-                            if (data.ErrorCode == 0) {
-                                layer.msg(data.ErrorMessage, { icon: 1 });
+                            if (data.code == 0) {
+                                layer.msg(data.msg, { icon: 1 });
                                 SearchData();
                             } else {
-                                layer.msg(data.ErrorMessage, { icon: 5 });
+                                layer.msg(data.msg, { icon: 5 });
                             }
                         });
                     } else {
@@ -189,13 +189,13 @@
                 btn: ['确定', '取消'],
             }, function () {
                 $.post("/User/DeleteUserData", {
-                    IDS: selectID,
+                    ids: selectID,
                 }, function (data) {
-                    if (data.ErrorCode == 0) {
-                        layer.msg(data.ErrorMessage, { icon: 1 });
+                    if (data.code == 0) {
+                        layer.msg(data.msg, { icon: 1 });
                         SearchData();
                     } else {
-                        layer.msg(data.ErrorMessage, { icon: 5 });
+                        layer.msg(data.msg, { icon: 5 });
                     }
                 });
             });

@@ -2,6 +2,7 @@
 using ZFramework.Data.DefaultData;
 using ZFramework.Data.Models;
 using ZFramework.Data.Models.Bus;
+using zgcwkj.Util;
 using zgcwkj.Util.Data;
 
 namespace ZFramework.Data
@@ -17,6 +18,15 @@ namespace ZFramework.Data
         /// <param name="optionsBuilder">上下文选项生成器</param>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            //读取配置
+            var dbConnect = ConfigHelp.Get("DBConnect");
+            var dbTimeout = 10;
+            //SQLite
+            optionsBuilder.UseSqlite(dbConnect, p =>
+            {
+                p.CommandTimeout(dbTimeout);
+            });
+            //
             base.OnConfiguring(optionsBuilder);
         }
 
@@ -34,7 +44,7 @@ namespace ZFramework.Data
             modelBuilder.Entity<SysMenuModel>().HasData(SysMenuDBInitializer.GetData);
             //初始化菜单明细数据
             modelBuilder.Entity<SysMenuDetailModel>().HasData(SysMenuDetailDBInitializer.GetData);
-
+            //
             base.OnModelCreating(modelBuilder);
         }
 

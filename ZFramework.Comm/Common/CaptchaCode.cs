@@ -2,7 +2,7 @@
 using System.Drawing.Imaging;
 
 #pragma warning disable CA1416 //禁用验证平台兼容性
-namespace ZFramework.Comm.Common
+namespace ZFramework.Comm
 {
     /// <summary>
     /// 验证码表达式

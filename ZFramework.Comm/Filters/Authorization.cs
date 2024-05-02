@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.RegularExpressions;
 using zgcwkj.Util;
 
-namespace ZFramework.Comm.Filters
+namespace ZFramework.Comm
 {
     /// <summary>
     /// 权限检测特性类
@@ -32,7 +31,8 @@ namespace ZFramework.Comm.Filters
         /// 权限检测特性类
         /// </summary>
         public Authorization()
-        { }
+        {
+        }
 
         /// <summary>
         /// 权限检测特性类

@@ -1,11 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Data;
-using ZFramework.Comm.Base;
-using ZFramework.Comm.Common;
-using ZFramework.Comm.Filters;
-using ZFramework.Comm.Models;
-using ZFramework.Data;
-using zgcwkj.Util;
 using zgcwkj.Util.Common;
 
 namespace ZFramework.Controllers
@@ -51,7 +45,7 @@ namespace ZFramework.Controllers
                 var validateCode = "zgcwkjToken";//验证码
                 SessionHelper.Set("ValidateCode", validateCode);
                 var result = Login(remember, accounts, password, validateCode) as dynamic;
-                if ((result.Value as MethodResult)?.ErrorCode == 0)
+                if ((result.Value as MethodResult)?.Code == 0)
                 {
                     return RedirectToAction("Admin");
                 }
@@ -94,8 +88,8 @@ namespace ZFramework.Controllers
         public IActionResult Login(string rememberMe, string accounts, string password, string captcha)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
             //防止页面的打开方式是不正确
             if (!SessionHelper.Get("ValidateCode").IsNull())
@@ -128,8 +122,8 @@ namespace ZFramework.Controllers
                             passwords = MD5Tool.GetMd5(passwords);
                             if (linqData.password == passwords)
                             {
-                                methodResult.ErrorCode = 0;
-                                methodResult.ErrorMessage = "登录成功，马上跳转";
+                                methodResult.Code = 0;
+                                methodResult.Msg = "登录成功，马上跳转";
 
                                 //重要的数据存储到Session中
                                 var remember = "checked";//记住密码
@@ -152,13 +146,13 @@ namespace ZFramework.Controllers
                                 CookieHelper.Set("Password", password);
                                 CookieHelper.Set("Remember", remember);
                             }
-                            else methodResult.ErrorMessage = "您输入的密码错误";
+                            else methodResult.Msg = "您输入的密码错误";
                         }
-                        else methodResult.ErrorMessage = "您输入的帐号错误";
+                        else methodResult.Msg = "您输入的帐号错误";
                     }
-                    else methodResult.ErrorMessage = "您输入的验证码错误";
+                    else methodResult.Msg = "您输入的验证码错误";
                 }
-                else methodResult.ErrorMessage = "请输入您的信息";
+                else methodResult.Msg = "请输入您的信息";
             }
             return Json(methodResult);
         }
@@ -209,19 +203,19 @@ namespace ZFramework.Controllers
         /// <summary>
         /// 修改个人信息
         /// </summary>
-        /// <param name="Name">用户名称</param>
-        /// <param name="Password">旧密码</param>
+        /// <param name="name">用户名称</param>
+        /// <param name="password">旧密码</param>
         /// <param name="toPassword">新密码</param>
         /// <returns></returns>
         [Authorization]
         [HttpPost]
-        public IActionResult UpdateUser(string Name, string Password, string toPassword)
+        public IActionResult UpdateUser(string name, string password, string toPassword)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
-            if (Name == null || Password == null || toPassword == null)
+            if (name == null || password == null || toPassword == null)
             {
                 return Json(methodResult);
             }
@@ -229,13 +223,13 @@ namespace ZFramework.Controllers
             var updCount = 0;
             var userID = SessionHelper.Get("UserID");
             //把密码加密一遍
-            Password = MD5Tool.GetMd5(Password);
+            password = MD5Tool.GetMd5(password);
             toPassword = MD5Tool.GetMd5(toPassword);
 
-            var linqData = MyDb.SysUserModel.Where(W => W.IsDelete == 0 && W.UserID == userID && W.Password == Password).FirstOrDefault();
+            var linqData = MyDb.SysUserModel.Where(W => W.IsDelete == 0 && W.UserID == userID && W.Password == password).FirstOrDefault();
             if (linqData != null)
             {
-                linqData.UserName = Name;
+                linqData.UserName = name;
                 linqData.Password = toPassword;
                 MyDb.SysUserModel.UpdateRange(linqData);
                 updCount = MyDb.SaveChanges();
@@ -244,13 +238,13 @@ namespace ZFramework.Controllers
             if (updCount > 0)
             {
                 SessionHelper.Clear();
-                methodResult.ErrorCode = 0;
-                methodResult.ErrorMessage = "修改成功，请您重新登录";
+                methodResult.Code = 0;
+                methodResult.Msg = "修改成功，请您重新登录";
             }
             else
             {
-                methodResult.ErrorCode = -1;
-                methodResult.ErrorMessage = "修改失败，请您重新尝试";
+                methodResult.Code = -1;
+                methodResult.Msg = "修改失败，请您重新尝试";
             }
             return Json(methodResult);
         }
@@ -264,20 +258,20 @@ namespace ZFramework.Controllers
         public IActionResult ExitUser()
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
             try
             {
                 SessionHelper.Clear();
                 CookieHelper.Set("Remember", "");
-                methodResult.ErrorCode = 0;
-                methodResult.ErrorMessage = "成功退出，请等待";
+                methodResult.Code = 0;
+                methodResult.Msg = "成功退出，请等待";
             }
             catch
             {
-                methodResult.ErrorCode = -1;
-                methodResult.ErrorMessage = "退出失败，请重试";
+                methodResult.Code = -1;
+                methodResult.Msg = "退出失败，请重试";
             }
 
             return Json(methodResult);

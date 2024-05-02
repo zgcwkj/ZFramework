@@ -1,17 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-	</PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="NPOI" Version="2.6.0" />
-		<PackageReference Include="SkiaSharp" Version="2.88.3" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NPOI" Version="2.6.2" />
+    <PackageReference Include="SkiaSharp" Version="2.88.6" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
 
-	<ItemGroup>
-	  <ProjectReference Include="..\ZFramework.Data\ZFramework.Data.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ZFramework.Data\ZFramework.Data.csproj" />
+  </ItemGroup>
 
 </Project>

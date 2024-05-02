@@ -124,26 +124,26 @@
                 title: "个人资料",
                 btn: ["确定", "取消"],
                 yes: function (index, layero) {
-                    var Name = $("#Name").val();
-                    var Password = $("#Password").val();
+                    var name = $("#Name").val();
+                    var password = $("#Password").val();
                     var toPassword = $("#toPassword").val();
-                    if (Name != "" && Password != "" && toPassword != "") {
+                    if (name != "" && password != "" && toPassword != "") {
                         layer.confirm('确定要修改用户名称和密码吗？', {
                             btn: ["确定", "取消"]
                         }, function () {
                             layer.msg("修改中");
                             $.post("/Admin/UpdateUser", {
-                                Name: Name,
-                                Password: Password,
+                                name: name,
+                                password: password,
                                 toPassword: toPassword
                             }, function (data) {
-                                if (data.ErrorCode == 0) {
-                                    layer.msg(data.ErrorMessage, { icon: 1 });
+                                if (data.code == 0) {
+                                    layer.msg(data.msg, { icon: 1 });
                                     setTimeout(function () {
                                         window.location.href = "";
                                     }, "1000");
                                 } else {
-                                    layer.msg(data.ErrorMessage, { icon: 5 });
+                                    layer.msg(data.msg, { icon: 5 });
                                     setTimeout(function () {
                                         window.location.href = "";
                                     }, "1000");
@@ -163,13 +163,13 @@
             }, function () {
                 //发起网络请求
                 $.post("/Admin/ExitUser", function (data) {
-                    if (data.ErrorCode == 0) {
-                        layer.msg(data.ErrorMessage, { icon: 1 });
+                    if (data.code == 0) {
+                        layer.msg(data.msg, { icon: 1 });
                         setTimeout(function () {
                             window.location.href = "/Admin";
                         }, "1000");
                     } else {
-                        layer.msg(data.ErrorMessage, { icon: 5 });
+                        layer.msg(data.msg, { icon: 5 });
                     }
                 });
             });

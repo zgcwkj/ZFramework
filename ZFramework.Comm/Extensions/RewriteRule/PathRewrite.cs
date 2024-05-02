@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Rewrite;
 using System.Text.RegularExpressions;
 
-namespace ZFramework.Comm.Filters
+namespace ZFramework.Comm
 {
     /// <summary>
     /// 地址重写规则
@@ -19,6 +19,7 @@ namespace ZFramework.Comm.Filters
             var toPath = request.Path.Value;
             var toHost = request.Host.Value;
 
+            if (toPath == null) return;
             //重复出现多斜杠时，改为一个斜杠
             var maths = Regex.Matches(toPath, @"(.*?)[/]{2,}");
             if (maths.Count > 0)

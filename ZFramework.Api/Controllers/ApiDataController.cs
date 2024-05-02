@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using ZFramework.Api.Models;
-using ZFramework.Comm.Base;
-using ZFramework.Comm.Models;
+using ZFramework.Comm;
 using zgcwkj.Util;
 
 namespace ZFramework.Api.Controllers
@@ -58,8 +57,8 @@ namespace ZFramework.Api.Controllers
         public IActionResult GetAppFile(string AV)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
             var cmd = DbProvider.Create();
             cmd.SetCommandText("select app_path,app_name from bus_appversion where app_state = 1");
@@ -72,21 +71,21 @@ namespace ZFramework.Api.Controllers
             var dataRow = cmd.QueryDataRow();
             if (dataRow.IsNull())
             {
-                methodResult.ErrorMessage = "No update";//暂无更新
+                methodResult.Msg = "No update";//暂无更新
                 return Json(methodResult);
             }
             var filePath = dataRow["app_path"].ToTrim();
             var fileName = dataRow["app_name"].ToTrim();
             if (filePath.IsNull())
             {
-                methodResult.ErrorMessage = "No update";//暂无更新
+                methodResult.Msg = "No update";//暂无更新
                 return Json(methodResult);
             }
             //统一文件路径
             filePath = Path.Combine(GlobalConstant.GetRunPath, filePath);
             if (!System.IO.File.Exists(filePath))
             {
-                methodResult.ErrorMessage = "Not found";//未找到文件
+                methodResult.Msg = "Not found";//未找到文件
                 return Json(methodResult);
             }
             var fileResult = PhysicalFile(filePath, "application/x-download");

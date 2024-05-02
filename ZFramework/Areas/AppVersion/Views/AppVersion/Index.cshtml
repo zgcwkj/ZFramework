@@ -12,7 +12,7 @@
             <div class="layui-form">
                 <div class="layui-form-item">
                     <div class="layui-inline">
-                        <input type="text" class="layui-input" id="BeginDate" name="BeginDate" placeholder="起始时间">
+                        <input type="text" class="layui-input" id="StartDate" name="StartDate" placeholder="起始时间">
                     </div>
                     <div class="layui-inline">
                         <input type="text" class="layui-input" id="EndDate" name="EndDate" placeholder="结束时间">
@@ -40,8 +40,8 @@
         layui.use(['jquery', 'layer', 'table', 'laydate', 'form', 'upload'], function () {
             $ = layui.jquery, layer = layui.layer, table = layui.table, laydate = layui.laydate, form = layui.form, upload = layui.upload;
             //起始时间
-            var beginDate = laydate.render({
-                elem: '#BeginDate',
+            var startDate = laydate.render({
+                elem: '#StartDate',
                 type: 'datetime',
                 btns: ['confirm'],
                 max: 'nowTime',//默认最大值为当前日期
@@ -63,7 +63,7 @@
                 btns: ['confirm'],
                 max: 'nowTime',
                 done: function (value, date) {
-                    beginDate.config.max = {
+                    startDate.config.max = {
                         year: date.year,
                         month: date.month - 1,//关键
                         date: date.date,
@@ -89,16 +89,16 @@
                 },
                 parseData: function (res) {
                     return {
-                        "code": res.ErrorCode,//解析接口状态
-                        "msg": res.ErrorMessage,//解析提示文本
-                        "count": res.DataCount,//解析数据长度
-                        "data": res.Data,//解析数据列表
+                        "code": res.code,//解析接口状态
+                        "msg": res.msg,//解析提示文本
+                        "count": res.total,//解析数据长度
+                        "data": res.data,//解析数据列表
                     };
                 },
                 where: {
-                    QueryLikeStr: '',
-                    BeginDate: '',
-                    EndDate: '',
+                    queryLikeStr: '',
+                    startDate: '',
+                    endDate: '',
                 },
                 cols: [[
                     { type: 'checkbox', fixed: 'left' },
@@ -119,7 +119,7 @@
                     { field: 'upload_time', title: '上传时间', width: 160 },
                     //{
                     //    field: 'canteenOperat', title: '操作', templet: function (d) {
-                    //        var index = d.LAY_TABLE_INDEX;
+                    //        var index = d.LAY_INDEX;
                     //        var html = '';
                     //        html += '<a class="layui-btn layui-btn-warm layui-btn-sm" onclick="UpdateDate(' + index + ')">修改</a>';
                     //        return html
@@ -180,9 +180,9 @@
                     curr: 1
                 },
                 where: {
-                    QueryLikeStr: $("#QueryLikeStr").val(),
-                    BeginDate: $("#BeginDate").val(),
-                    EndDate: $("#EndDate").val(),
+                    queryLikeStr: $("#QueryLikeStr").val(),
+                    startDate: $("#StartDate").val(),
+                    endDate: $("#EndDate").val(),
                 },
                 done: function (data) {
                     if (data.code == 0) {
@@ -229,11 +229,11 @@
                         },
                         done: function (data) {
                             layer.closeAll("dialog");
-                            $("#app_path").val(data.Data.FilePath);
-                            $("#app_name").val(data.Data.FileName);
-                            $("#app_desc").val(data.Data.AppDesc);
-                            $("#app_enforce").val(data.Data.AppEnforce);
-                            $("#app_version").val(data.Data.Version);
+                            $("#app_path").val(data.data.filePath);
+                            $("#app_name").val(data.data.fileName);
+                            $("#app_desc").val(data.data.appDesc);
+                            $("#app_enforce").val(data.data.appEnforce);
+                            $("#app_version").val(data.data.version);
                         }
                     });
                 },
@@ -250,18 +250,18 @@
                             time: false
                         });
                         $.post("/AppVersion/AppVersion/InsertData", {
-                            FilePath: app_path,
-                            FileName: app_name,
-                            AppDesc: app_desc,
-                            AppEnforce: app_enforce,
-                            Version: app_version,
+                            filePath: app_path,
+                            fileName: app_name,
+                            appDesc: app_desc,
+                            appEnforce: app_enforce,
+                            version: app_version,
                         }, function (data) {
                             layer.closeAll();
-                            if (data.ErrorCode == 0) {
-                                layer.msg(data.ErrorMessage, { icon: 1 });
+                            if (data.code == 0) {
+                                layer.msg(data.msg, { icon: 1 });
                                 SearchData();
                             } else {
-                                layer.msg(data.ErrorMessage, { icon: 5 });
+                                layer.msg(data.msg, { icon: 5 });
                             }
                         });
                     } else {
@@ -285,15 +285,15 @@
                     time: false
                 });
                 $.post("/AppVersion/AppVersion/UpdateState", {
-                    IDS: selectID,
-                    State: state,
+                    ids: selectID,
+                    state: state,
                 }, function (data) {
                     layer.closeAll();
-                    if (data.ErrorCode == 0) {
-                        layer.msg(data.ErrorMessage, { icon: 1 });
+                    if (data.code == 0) {
+                        layer.msg(data.msg, { icon: 1 });
                         SearchData();
                     } else {
-                        layer.msg(data.ErrorMessage, { icon: 5 });
+                        layer.msg(data.msg, { icon: 5 });
                     }
                 });
             });

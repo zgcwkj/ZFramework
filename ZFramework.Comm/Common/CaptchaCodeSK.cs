@@ -1,6 +1,6 @@
 ﻿using SkiaSharp;
 
-namespace ZFramework.Comm.Common
+namespace ZFramework.Comm
 {
     /// <summary>
     /// 验证码 SkiaSharp 库（不用考虑太多跨平台问题）

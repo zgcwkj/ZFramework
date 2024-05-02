@@ -60,9 +60,9 @@ namespace ZFramework.Data.DefaultData
                 {
                     MenuID = 4,
                     ParentID = 1,
-                    Title = "系统日志",
-                    Icon = "fa fa-leaf",
-                    Link = "/Log",
+                    Title = "系统信息",
+                    Icon = "fa fa-info-circle",
+                    Link = "/Server",
                     Sort = 3,
                     IsDelete = 0,
                     CreateTime = "2020-01-01".ToDate(),
@@ -73,10 +73,10 @@ namespace ZFramework.Data.DefaultData
                 {
                     MenuID = 5,
                     ParentID = 1,
-                    Title = "系统信息",
-                    Icon = "fa fa-server",
-                    Link = "/Server",
-                    Sort = 3,
+                    Title = "系统任务",
+                    Icon = "fa fa-tasks",
+                    Link = "/Quartz",
+                    Sort = 4,
                     IsDelete = 0,
                     CreateTime = "2020-01-01".ToDate(),
                     CreatorID = "",
@@ -85,6 +85,19 @@ namespace ZFramework.Data.DefaultData
                 lists.Add(new SysMenuModel
                 {
                     MenuID = 6,
+                    ParentID = 1,
+                    Title = "系统日志",
+                    Icon = "fa fa-leaf",
+                    Link = "/Log",
+                    Sort = 5,
+                    IsDelete = 0,
+                    CreateTime = "2020-01-01".ToDate(),
+                    CreatorID = "",
+                });
+
+                lists.Add(new SysMenuModel
+                {
+                    MenuID = 7,
                     ParentID = 0,
                     Title = "功能管理",
                     Icon = "fa fa-leaf",
@@ -97,12 +110,12 @@ namespace ZFramework.Data.DefaultData
 
                 lists.Add(new SysMenuModel
                 {
-                    MenuID = 7,
-                    ParentID = 6,
+                    MenuID = 8,
+                    ParentID = 7,
                     Title = "版本控制",
                     Icon = "fa fa-file-code-o",
                     Link = "/AppVersion/AppVersion",
-                    Sort = 3,
+                    Sort = 1,
                     IsDelete = 0,
                     CreateTime = "2020-01-01".ToDate(),
                     CreatorID = "",

@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ZFramework.Comm.Base;
-using ZFramework.Comm.Filters;
-using zgcwkj.Util;
 
 namespace ZFramework.Controllers
 {
@@ -18,8 +15,7 @@ namespace ZFramework.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            #region 通知消息
-
+            //通知消息
             var mesInfo = "请登录帐号";
             var userID = SessionHelper.Get("UserID");
             if (!userID.IsNull())
@@ -29,9 +25,7 @@ namespace ZFramework.Controllers
                 else mesInfo = "暂无消息";
             }
             ViewData["MesInfo"] = mesInfo;
-
-            #endregion 通知消息
-
+            //
             return View();
         }
 

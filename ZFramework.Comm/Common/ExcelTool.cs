@@ -3,7 +3,7 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Data;
 
-namespace ZFramework.Comm.Common
+namespace ZFramework.Comm
 {
     /// <summary>
     /// Excel 工具

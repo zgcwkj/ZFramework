@@ -1,4 +1,4 @@
-﻿namespace ZFramework.Comm.Models
+﻿namespace ZFramework.Comm
 {
     /// <summary>
     /// 方法结果
@@ -8,12 +8,12 @@
         /// <summary>
         /// 错误代码
         /// </summary>
-        public int? ErrorCode { get; set; } = null;
+        public int? Code { get; set; } = null;
 
         /// <summary>
         /// 错误消息
         /// </summary>
-        public string ErrorMessage { get; set; } = null;
+        public string Msg { get; set; } = null;
 
         /// <summary>
         /// 数据
@@ -21,8 +21,8 @@
         public object Data { get; set; } = null;
 
         /// <summary>
-        /// 数据数量
+        /// 数据总数量
         /// </summary>
-        public int? DataCount { get; set; } = null;
+        public int? Total { get; set; } = null;
     }
 }

@@ -1,8 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ZFramework.Comm.Base;
-using ZFramework.Comm.Filters;
-using ZFramework.Comm.Models;
-using zgcwkj.Util;
 
 namespace ZFramework.Controllers
 {
@@ -48,37 +44,37 @@ namespace ZFramework.Controllers
         /// <summary>
         /// 查询日志数据
         /// </summary>
-        /// <param name="Page">页码</param>
-        /// <param name="PageSize">每页数量</param>
-        /// <param name="QueryLikeStr">模糊搜索内容</param>
-        /// <param name="BeginDate">开始时间</param>
-        /// <param name="EndDate">结束时间</param>
+        /// <param name="page">页码</param>
+        /// <param name="pageSize">每页数量</param>
+        /// <param name="queryLikeStr">模糊搜索内容</param>
+        /// <param name="startDate">开始时间</param>
+        /// <param name="endDate">结束时间</param>
         [HttpPost]
-        public IActionResult InquireData(int Page, int PageSize, string QueryLikeStr, string BeginDate, string EndDate)
+        public IActionResult InquireData(int page, int pageSize, string queryLikeStr, string startDate, string endDate)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
-            methodResult.ErrorCode = 0;
-            methodResult.ErrorMessage = "查询完成";
+            methodResult.Code = 0;
+            methodResult.Msg = "查询完成";
             return Json(methodResult);
         }
 
         /// <summary>
         /// 新增错误数据
         /// </summary>
-        /// <param name="FilePath">路径</param>
-        /// <param name="ControllerName">控制器名称</param>
+        /// <param name="filePath">路径</param>
+        /// <param name="controllerName">控制器名称</param>
         /// <returns></returns>
-        public IActionResult InsertLogData(string FilePath, string ControllerName)
+        public IActionResult InsertLogData(string filePath, string controllerName)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
 
-            methodResult.ErrorCode = 0;
-            methodResult.ErrorMessage = "信息已记录";
+            methodResult.Code = 0;
+            methodResult.Msg = "错误已记录";
             return Json(methodResult);
         }
     }

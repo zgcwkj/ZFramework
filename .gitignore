@@ -1,6 +1,6 @@
-################################################################################
+############################################################
 # 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
-################################################################################
+############################################################
 
 # User-specific files
 *.rsuser
@@ -9,18 +9,17 @@
 *.userosscache
 *.sln.docstates
 
+# Cache directory
+.vs/
+.config/
+.vscode/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
 # Mono auto generated files
 mono_crash.*
 
-# Visual Studio cache/options directory
-.vs/
-.config/
-
-# Visual Code cache/options directory
-.vscode/
 
 # Build results
 [Dd]ebug/
@@ -38,3 +37,4 @@ bld/
 [Oo]ut/
 [Pp]ublishProfiles/
 [Pp]rotection/
+[Qq]uartzConfig/

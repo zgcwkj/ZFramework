@@ -1,0 +1,390 @@
+﻿@addTagHelper *,Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+
+<html>
+<head>
+    <partial name="Top" />
+    <title>系统任务</title>
+</head>
+<body style="background:#fff;margin:20px;">
+    <div class="wrap-container clearfix">
+        <div class="column-content-detail">
+            <div class="layui-form">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <input type="text" class="layui-input" id="QueryLikeStr" name="QueryLikeStr" placeholder="关键字">
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn" onclick="SearchData()">搜索</button>
+                        <button class="layui-btn layui-btn-normal" onclick="InsertData()">新增数据</button>
+                        <button class="layui-btn layui-btn-danger" onclick="DeleteData()">删除选中</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form" id="TablePrint">
+                <table class="layui-table" lay-filter="TableData" id="TableData"></table>
+            </div>
+        </div>
+    </div>
+    <partial name="Bottom" />
+    <script>
+        var $, layer, table, laydate, form;
+        layui.use(['jquery', 'layer', 'table', 'laydate', 'form'], function () {
+            $ = layui.jquery, layer = layui.layer, table = layui.table, laydate = layui.laydate, form = layui.form;
+            //表格绑定
+            table.render({
+                elem: '#TableData',
+                url: '/Quartz/InquireData',
+                page: false,
+                method: 'post',
+                cellMinWidth: 80,
+                height: 'full-140',
+                limit: 50,
+                limits: [50, 250, 500],
+                parseData: function (res) {
+                    return {
+                        "code": res.code,//解析接口状态
+                        "msg": res.msg,//解析提示文本
+                        "count": res.total,//解析数据长度
+                        "data": res.data,//解析数据列表
+                    };
+                },
+                where: {
+                    QueryLikeStr: '',
+                },
+                cols: [[
+                    { type: 'checkbox', fixed: 'left' },
+                    { type: 'numbers', title: '序号', fixed: 'left' },
+                    { field: 'taskName', title: '任务' },
+                    { field: 'groupName', title: '分组' },
+                    { field: 'interval', title: 'Cron' },
+                    { field: 'apiUrl', title: 'ApiUrl' },
+                    {
+                        field: 'statusStr', title: '状态', width: 80, templet: function (d) {
+                            var index = d.LAY_INDEX;
+                            var html = `<span style="color:#ff0000">${d.statusStr}</span>`;
+                            if (d.status != '6') {
+                                html = `<span style="color:#1e9fff">${d.statusStr}</span>`;
+                            }
+                            return html
+                        }
+                    },
+                    { field: 'timeFlag', title: '最后运行时间', width: 120 },
+                    { field: 'describe', title: '任务描述' },
+                    {
+                        field: 'taskOperat', title: '任务', templet: function (d) {
+                            var index = d.LAY_INDEX;
+                            var html = '';
+                            if (d.status == '6') {
+                                html += '<a class="layui-btn layui-btn-sm" onclick="RunData(' + index + ')">执行</a>';
+                                html += '<a class="layui-btn layui-btn-danger layui-btn-sm" onclick="PauseData(' + index + ')">停用</a>';
+                            } else {
+                                html += '<a class="layui-btn layui-btn-warm layui-btn-sm" onclick="StartData(' + index + ')">启用</a>';
+                            }
+                            html += '<a class="layui-btn layui-btn-primary layui-btn-sm" onclick="LogData(' + index + ')">日志</a>';
+                            return html
+                        }, fixed: 'right', width: 200
+                    },
+                    {
+                        field: 'moreOperat', title: '操作', templet: function (d) {
+                            var index = d.LAY_INDEX;
+                            var html = '';
+                            html += '<a class="layui-btn layui-btn-warm layui-btn-sm" onclick="UpdateData(' + index + ')">修改</a>';
+                            html += '<a class="layui-btn layui-btn-danger layui-btn-sm" onclick="DeleteData(' + index + ')">删除</a>';
+                            return html
+                        }, fixed: 'right', width: 140
+                    },
+                ]]
+            });
+        });
+        //新增和修改界面代码
+        var _html = "";
+        _html += "<div class='layui-form' style='margin:10px'>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>任务</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='taskName' placeholder='请输入任务名称'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>分组</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='groupName' placeholder='请输分组'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>Cron</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='interval' placeholder='请输 Cron 表达式'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>接口</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <input class='layui-input' type='text' autocomplete='off' id='apiUrl' placeholder='请输接口地址'>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "  <div class='layui-form-item'>";
+        _html += "    <label class='layui-form-label'>备注</label>";
+        _html += "    <div class='layui-input-block'>";
+        _html += "      <textarea id='describe' placeholder='请输入备注' class='layui-textarea'></textarea>";
+        _html += "    </div>";
+        _html += "  </div>";
+        _html += "</div>";
+        //查询按钮
+        function SearchData() {
+            layer.msg('正在查询中...', {
+                icon: 16,
+                shade: 0.5,
+                time: false
+            });
+            table.reload('TableData', {
+                where: {
+                    QueryLikeStr: $("#QueryLikeStr").val(),
+                },
+                done: function (data) {
+                    if (data.code == 0) {
+                        layer.closeAll();
+                    } else {
+                        layer.open({
+                            type: 1,
+                            offset: 'auto',
+                            id: 'TableData_SearchData',
+                            content: `<div style="padding: 20px 100px;">${data.msg}</div>`,
+                            btn: '关闭',
+                            btnAlign: 'c',
+                            shade: 0,
+                            yes: function () {
+                                layer.closeAll();
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        //新增按钮
+        function InsertData() {
+            layer.open({
+                shade: 0.8,
+                area: '70%',
+                resize: false,
+                content: _html,
+                title: "新增数据",
+                btn: ["确定", "取消"],
+                type: 1,
+                yes: function (index, layero) {
+                    var taskName = $("#taskName").val();
+                    var groupName = $("#groupName").val();
+                    var interval = $("#interval").val();
+                    var apiUrl = $("#apiUrl").val();
+                    var describe = $("#describe").val();
+                    if (taskName != "" && groupName != "" && interval != "" && apiUrl != "") {
+                        layer.msg('正在存储中...', {
+                            icon: 16,
+                            shade: 0.7,
+                            time: false
+                        });
+                        $.post("/Quartz/InsertData", {
+                            taskName: taskName,
+                            groupName: groupName,
+                            interval: interval,
+                            apiUrl: apiUrl,
+                            describe: describe,
+                        }, function (data) {
+                            if (data.code == 0) {
+                                layer.closeAll();
+                                layer.msg(data.msg, { icon: 1 });
+                                SearchData();
+                            } else {
+                                layer.msg(data.msg, { icon: 5 });
+                            }
+                        });
+                    } else {
+                        layer.msg("请输入正确的数据", { icon: 3 });
+                    }
+                }
+            });
+        }
+        //修改按钮
+        function UpdateData(index) {
+            var getData = table.cache.TableData;
+            var row = getData[index];
+            layer.open({
+                shade: 0.8,
+                area: '70%',
+                resize: false,
+                content: _html,
+                title: "修改用户",
+                btn: ["确定", "取消"],
+                success: function (layero, index) {
+                    $("#taskName").val(row.taskName);
+                    $("#groupName").val(row.groupName);
+                    $("#interval").val(row.interval);
+                    $("#apiUrl").val(row.apiUrl);
+                    $("#describe").val(row.describe);
+                },
+                yes: function (index, layero) {
+                    var taskName = $("#taskName").val();
+                    var groupName = $("#groupName").val();
+                    var interval = $("#interval").val();
+                    var apiUrl = $("#apiUrl").val();
+                    var describe = $("#describe").val();
+                    if (taskName != "" && groupName != "" && interval != "" && apiUrl != "") {
+                        layer.msg('正在存储中...', {
+                            icon: 16,
+                            shade: 0.7,
+                            time: false
+                        });
+                        $.post("/Quartz/UpdateData", {
+                            id: row.id,
+                            taskName: taskName,
+                            groupName: groupName,
+                            interval: interval,
+                            apiUrl: apiUrl,
+                            describe: describe,
+                            status: row.status,
+                        }, function (data) {
+                            if (data.code == 0) {
+                                layer.closeAll();
+                                layer.msg(data.msg, { icon: 1 });
+                                SearchData();
+                            } else {
+                                layer.msg(data.msg, { icon: 5 });
+                            }
+                        });
+                    } else {
+                        layer.msg("请输入正确的数据", { icon: 3 });
+                    }
+                }
+            });
+        }
+        //删除按钮
+        function DeleteData(index) {
+            var selectID = "";
+            if (index == null) {
+                selectID = GetSelect();
+                if (selectID == "") { layer.msg("请选择数据"); return; }
+            } else {
+                //单选（通过表格数据选择删除）
+                var getData = table.cache.TableData;
+                var row = getData[index];
+                selectID = row.id;
+            }
+            layer.confirm('确定要删除吗？', {
+                shade: 0.4,
+                resize: false,
+                btn: ['确定', '取消'],
+            }, function () {
+                $.post("/Quartz/DeleteData", {
+                    ids: selectID,
+                }, function (data) {
+                    if (data.code == 0) {
+                        layer.msg(data.msg, { icon: 1 });
+                        SearchData();
+                    } else {
+                        layer.msg(data.msg, { icon: 5 });
+                    }
+                });
+            });
+        }
+        //执行任务按钮
+        function RunData(index) {
+            var selectID = "";
+            if (index == null) {
+                selectID = GetSelect();
+                if (selectID == "") { layer.msg("请选择数据"); return; }
+            } else {
+                //单选（通过表格数据选择删除）
+                var getData = table.cache.TableData;
+                var row = getData[index];
+                selectID = row.id;
+            }
+            $.post("/Quartz/Run", {
+                ids: selectID,
+            }, function (data) {
+                if (data.code == 0) {
+                    layer.msg(data.msg, { icon: 1 });
+                    SearchData();
+                } else {
+                    layer.msg(data.msg, { icon: 5 });
+                }
+            });
+        }
+        //开启任务按钮
+        function StartData(index) {
+            var selectID = "";
+            if (index == null) {
+                selectID = GetSelect();
+                if (selectID == "") { layer.msg("请选择数据"); return; }
+            } else {
+                //单选（通过表格数据选择删除）
+                var getData = table.cache.TableData;
+                var row = getData[index];
+                selectID = row.id;
+            }
+            $.post("/Quartz/Start", {
+                ids: selectID,
+            }, function (data) {
+                if (data.code == 0) {
+                    layer.msg(data.msg, { icon: 1 });
+                    SearchData();
+                } else {
+                    layer.msg(data.msg, { icon: 5 });
+                }
+            });
+        }
+        //暂停任务按钮
+        function PauseData(index) {
+            var selectID = "";
+            if (index == null) {
+                selectID = GetSelect();
+                if (selectID == "") { layer.msg("请选择数据"); return; }
+            } else {
+                //单选（通过表格数据选择删除）
+                var getData = table.cache.TableData;
+                var row = getData[index];
+                selectID = row.id;
+            }
+            $.post("/Quartz/Pause", {
+                ids: selectID,
+            }, function (data) {
+                if (data.code == 0) {
+                    layer.msg(data.msg, { icon: 1 });
+                    SearchData();
+                } else {
+                    layer.msg(data.msg, { icon: 5 });
+                }
+            });
+        }
+        //日志按钮
+        function LogData(index) {
+            var getData = table.cache.TableData;
+            var row = getData[index];
+            //
+            $.post("/Quartz/GetLog", {
+                taskName: row.taskName,
+                groupName: row.groupName,
+                page: 1,
+                pageSize: 1000,
+            }, function (data) {
+                layer.msg("请看控制台");
+                console.log(data);
+            });
+        }
+        //获取选中
+        function GetSelect() {
+            var selectIDs = "";
+            //多选（通过便利表格所选择数据）
+            var checkStatus = table.checkStatus('TableData');
+            var checkData = checkStatus.data; //得到选中的数据
+            for (var i = 0; i < checkData.length; i++) {
+                selectIDs += checkData[i].id + ",";
+                if (i == checkData.length - 1) {
+                    selectIDs = selectIDs.substring(0, selectIDs.length - 1);
+                }
+            }
+            return selectIDs;
+        }
+    </script>
+</body>
+</html>

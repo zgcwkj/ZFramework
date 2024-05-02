@@ -1,12 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Data;
-using ZFramework.Comm.Base;
-using ZFramework.Comm.Filters;
-using ZFramework.Comm.Models;
-using ZFramework.Data;
 using ZFramework.Data.Models.Bus;
-using zgcwkj.Util;
 
 namespace ZFramework.Areas.ChartData.Controllers
 {
@@ -43,33 +37,33 @@ namespace ZFramework.Areas.ChartData.Controllers
         /// <summary>
         /// 查询数据
         /// </summary>
-        /// <param name="Page">页码</param>
-        /// <param name="PageSize">每页数量</param>
-        /// <param name="QueryLikeStr">模糊搜索内容</param>
-        /// <param name="BeginDate">开始时间</param>
-        /// <param name="EndDate">结束时间</param>
+        /// <param name="page">页码</param>
+        /// <param name="pageSize">每页数量</param>
+        /// <param name="queryLikeStr">模糊搜索内容</param>
+        /// <param name="startDate">开始时间</param>
+        /// <param name="endDate">结束时间</param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult InquireData(int Page, int PageSize, string QueryLikeStr, string BeginDate, string EndDate)
+        public IActionResult InquireData(int page, int pageSize, string queryLikeStr, string startDate, string endDate)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
-
-            var pageOffset = (Page - 1) * PageSize;
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
+            //
+            var pageOffset = (page - 1) * pageSize;
             var rolePath = SessionHelper.Get("RolePath").ToStr();
             //Linq
             var linqData = from bav in this.MyDb.BusAppVersionModel select bav;
             //条件
-            if (QueryLikeStr.IsNotNull()) linqData = linqData.Where(T => T.AppName.Contains(QueryLikeStr) || T.AppVersion.Contains(QueryLikeStr));
-            if (BeginDate.IsNotNull())
+            if (queryLikeStr.IsNotNull()) linqData = linqData.Where(T => T.AppName.Contains(queryLikeStr) || T.AppVersion.Contains(queryLikeStr));
+            if (startDate.IsNotNull())
             {
-                var toBeginDate = BeginDate.ToDate();
+                var toBeginDate = startDate.ToDate();
                 linqData = linqData.Where(T => T.CreateTime >= toBeginDate);
             }
-            if (EndDate.IsNotNull())
+            if (endDate.IsNotNull())
             {
-                var toEndDate = EndDate.ToDate();
+                var toEndDate = endDate.ToDate();
                 linqData = linqData.Where(T => T.CreateTime <= toEndDate);
             }
             //数据
@@ -84,11 +78,11 @@ namespace ZFramework.Areas.ChartData.Controllers
                 app_state = T.AppState,
                 upload_time = T.UploadTime.ToString("yyyy-MM-dd HH:mm:ss"),
                 create_time = T.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"),
-            }).Skip(pageOffset).Take(PageSize).ToList();
-            methodResult.DataCount = linqData.Count();
-
-            methodResult.ErrorCode = 0;
-            methodResult.ErrorMessage = "查询完成";
+            }).Skip(pageOffset).Take(pageSize).ToList();
+            methodResult.Total = linqData.Count();
+            //
+            methodResult.Code = 0;
+            methodResult.Msg = "查询完成";
             return Json(methodResult);
         }
 
@@ -100,9 +94,8 @@ namespace ZFramework.Areas.ChartData.Controllers
         public IActionResult UploadFile(IFormFile file)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
-
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
             //获取文件扩展名
             var Fileexc = Path.GetExtension(file.FileName);
             //保存路径
@@ -130,7 +123,7 @@ namespace ZFramework.Areas.ChartData.Controllers
             if (linqData == null) linqData = new BusAppVersionModel();
             var appVersion = linqData.AppVersion;
             var appVersionInt = appVersion.Replace(".", "").ToInt();
-
+            //
             methodResult.Data = new
             {
                 FilePath = filePath,
@@ -139,88 +132,85 @@ namespace ZFramework.Areas.ChartData.Controllers
                 AppEnforce = false,
                 Version = (appVersionInt + 1).ToTrim(),
             };
-            methodResult.ErrorCode = 0;
-            methodResult.ErrorMessage = "";
+            methodResult.Code = 0;
+            methodResult.Msg = "";
             return Json(methodResult);
         }
 
         /// <summary>
         /// 新增数据
         /// </summary>
-        /// <param name="FilePath">文件路径</param>
-        /// <param name="FileName">文件名称</param>
-        /// <param name="AppDesc">应用描述</param>
-        /// <param name="AppEnforce">强制更新</param>
-        /// <param name="Version">版本号</param>
+        /// <param name="filePath">文件路径</param>
+        /// <param name="fileName">文件名称</param>
+        /// <param name="appDesc">应用描述</param>
+        /// <param name="appEnforce">强制更新</param>
+        /// <param name="version">版本号</param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult InsertData(string FilePath, string FileName, string AppDesc, int AppEnforce, string Version)
+        public IActionResult InsertData(string filePath, string fileName, string appDesc, int appEnforce, string version)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
-
-            if (FilePath.IsNull()) return Json(methodResult);
-            if (FileName.IsNull()) return Json(methodResult);
-            if (Version.IsNull()) return Json(methodResult);
-
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
+            if (filePath.IsNull()) return Json(methodResult);
+            if (fileName.IsNull()) return Json(methodResult);
+            if (version.IsNull()) return Json(methodResult);
             var rolePath = SessionHelper.Get("RolePath").ToStr();
             //目标位置
             var targetPath = Path.Combine(GlobalConstant.GetRunPath, "Resource/AppVersion");
             //防止文件夹没有
             if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
-            var okPath = Path.Combine(targetPath, $"{DateTime.Now:yyyyMMddHHmmss}_{FileName}");
+            var okPath = Path.Combine(targetPath, $"{DateTime.Now:yyyyMMddHHmmss}_{fileName}");
             //移动文件
-            System.IO.File.Copy(FilePath, okPath);
+            System.IO.File.Copy(filePath, okPath);
             //统一文件路径
             okPath = okPath.Replace(GlobalConstant.GetRunPath, "").Replace("\\", "/")[1..];
             //新增数据
             var appVersionModel = new BusAppVersionModel();
             appVersionModel.AppID = GlobalConstant.GuidMd5;
-            appVersionModel.AppName = FileName;
-            appVersionModel.AppDesc = AppDesc;
+            appVersionModel.AppName = fileName;
+            appVersionModel.AppDesc = appDesc;
             appVersionModel.AppPath = okPath;
-            appVersionModel.AppVersion = Version;
-            appVersionModel.AppEnforce = AppEnforce;
+            appVersionModel.AppVersion = version;
+            appVersionModel.AppEnforce = appEnforce;
             appVersionModel.AppState = 1;
             appVersionModel.RolePath = rolePath;
             appVersionModel.UploadTime = DateTime.Now;
             this.MyDb.Add(appVersionModel);
             this.MyDb.SaveChanges();
-
-            methodResult.ErrorCode = 0;
-            methodResult.ErrorMessage = "新增完成";
+            //
+            methodResult.Code = 0;
+            methodResult.Msg = "新增完成";
             return Json(methodResult);
         }
 
         /// <summary>
         /// 更新状态
         /// </summary>
-        /// <param name="IDS">应用版本ID</param>
-        /// <param name="State">状态</param>
+        /// <param name="ids">应用版本ID</param>
+        /// <param name="state">状态</param>
         /// <returns></returns>
         [HttpPost]
-        public IActionResult UpdateState(string IDS, string State)
+        public IActionResult UpdateState(string ids, string state)
         {
             var methodResult = new MethodResult();
-            methodResult.ErrorCode = -1;
-            methodResult.ErrorMessage = "信息错误";
-
-            if (IDS.IsNull()) return Json(methodResult);
-            if (State.IsNull()) return Json(methodResult);
+            methodResult.Code = -1;
+            methodResult.Msg = "信息错误";
+            if (ids.IsNull()) return Json(methodResult);
+            if (state.IsNull()) return Json(methodResult);
             //批量修改
-            var appIDs = IDS.Split(',');
+            var appIDs = ids.Split(',');
             var data = this.MyDb.BusAppVersionModel.Where(W => appIDs.Contains(W.AppID));
             data.ForEachAsync(F =>
             {
-                F.AppState= State.ToInt();
+                F.AppState = state.ToInt();
             });
             this.MyDb.SaveChanges();
             //结果描述文字
-            var message = State == "0" ? "停用" : "启用";
-            
-            methodResult.ErrorCode = 0;
-            methodResult.ErrorMessage = $"{message}完成";
+            var message = state == "0" ? "停用" : "启用";
+            //
+            methodResult.Code = 0;
+            methodResult.Msg = $"{message}完成";
             return Json(methodResult);
         }
     }
